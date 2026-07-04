@@ -40,6 +40,9 @@ coverage/
 .vscode/
 .idea/
 
+# Firebase real config (keep secrets out of the repo)
+src/config/firebaseConfig.ts
+
 # AI / assistant tooling (keep out of the repo)
 .claude/
 CLAUDE.md
