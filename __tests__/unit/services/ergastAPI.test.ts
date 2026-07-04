@@ -123,57 +123,82 @@ describe('ErgastService', () => {
   });
 
   describe('getStandings', () => {
-    it('should fetch driver standings for a season', async () => {
-      // Arrange
-      const season = '2026';
-      const mockStandingsData = {
-        data: {
-          MRData: {
-            StandingsTable: {
-              season: '2026',
-              round: '12',
-              StandingsList: [
-                {
-                  DriverStandings: [
-                    {
-                      position: '1',
-                      positionText: '1',
-                      points: '275',
-                      wins: '4',
-                      driver: {
-                        driverId: 'max_verstappen',
-                        code: 'VER',
-                        givenName: 'Max',
-                        familyName: 'Verstappen',
-                        dob: '1997-12-30',
-                        nationality: 'Dutch',
-                        url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
-                      },
-                      constructors: [],
+    // jolpica exposes driver and constructor standings on two separate endpoints.
+    const mockDriverStandingsData = {
+      data: {
+        MRData: {
+          StandingsTable: {
+            season: '2026',
+            round: '12',
+            StandingsList: [
+              {
+                season: '2026',
+                round: '12',
+                DriverStandings: [
+                  {
+                    position: '1',
+                    positionText: '1',
+                    points: '275',
+                    wins: '4',
+                    driver: {
+                      driverId: 'max_verstappen',
+                      code: 'VER',
+                      givenName: 'Max',
+                      familyName: 'Verstappen',
+                      dob: '1997-12-30',
+                      nationality: 'Dutch',
+                      url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
                     },
-                  ],
-                  ConstructorStandings: [
-                    {
-                      position: '1',
-                      positionText: '1',
-                      points: '400',
-                      wins: '6',
-                      constructor: {
-                        constructorId: 'red_bull',
-                        name: 'Red Bull Racing',
-                        nationality: 'Austrian',
-                        url: 'http://en.wikipedia.org/wiki/Red_Bull_Racing',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
+                    constructors: [],
+                  },
+                ],
+              },
+            ],
           },
         },
-      };
+      },
+    };
 
-      mockAxiosInstance.get.mockResolvedValueOnce(mockStandingsData);
+    const mockConstructorStandingsData = {
+      data: {
+        MRData: {
+          StandingsTable: {
+            season: '2026',
+            round: '12',
+            StandingsList: [
+              {
+                season: '2026',
+                round: '12',
+                ConstructorStandings: [
+                  {
+                    position: '1',
+                    positionText: '1',
+                    points: '400',
+                    wins: '6',
+                    constructor: {
+                      constructorId: 'red_bull',
+                      name: 'Red Bull Racing',
+                      nationality: 'Austrian',
+                      url: 'http://en.wikipedia.org/wiki/Red_Bull_Racing',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    it('should fetch driver and constructor standings for a season from two endpoints', async () => {
+      // Arrange
+      const season = '2026';
+      mockAxiosInstance.get.mockImplementation((path: string) => {
+        if (path.includes('constructorStandings')) {
+          return Promise.resolve(mockConstructorStandingsData);
+        }
+        return Promise.resolve(mockDriverStandingsData);
+      });
 
       // Act
       const standings = await service.getStandings(season);
@@ -185,37 +210,31 @@ describe('ErgastService', () => {
       expect(standings.driverStandings[0].driver.familyName).toBe('Verstappen');
       expect(standings.constructorStandings).toHaveLength(1);
       expect(standings.constructorStandings[0].constructor.name).toBe('Red Bull Racing');
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2026/standings.json');
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2026/driverStandings.json');
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2026/constructorStandings.json');
     });
 
-    it('should fetch standings for a specific round', async () => {
+    it('should fetch standings for a specific round from two endpoints', async () => {
       // Arrange
       const season = '2026';
       const round = '5';
-      const mockRoundStandingsData = {
-        data: {
-          MRData: {
-            StandingsTable: {
-              season: '2026',
-              round: '5',
-              StandingsList: [
-                {
-                  DriverStandings: [],
-                  ConstructorStandings: [],
-                },
-              ],
-            },
-          },
-        },
-      };
-
-      mockAxiosInstance.get.mockResolvedValueOnce(mockRoundStandingsData);
+      mockAxiosInstance.get.mockImplementation((path: string) => {
+        if (path.includes('constructorStandings')) {
+          return Promise.resolve(mockConstructorStandingsData);
+        }
+        return Promise.resolve(mockDriverStandingsData);
+      });
 
       // Act
       await service.getStandings(season, round);
 
       // Assert
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/${season}/${round}/standings.json`);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        `/${season}/${round}/driverStandings.json`
+      );
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        `/${season}/${round}/constructorStandings.json`
+      );
     });
 
     it('should handle empty standings gracefully', async () => {
@@ -233,7 +252,7 @@ describe('ErgastService', () => {
         },
       };
 
-      mockAxiosInstance.get.mockResolvedValueOnce(mockEmptyStandings);
+      mockAxiosInstance.get.mockResolvedValue(mockEmptyStandings);
 
       // Act
       const standings = await service.getStandings(season);
@@ -571,7 +590,7 @@ describe('ErgastService', () => {
 
       // Assert
       expect(mockedAxios.create).toHaveBeenCalledWith({
-        baseURL: 'https://ergast.com/api/f1',
+        baseURL: 'https://api.jolpi.ca/ergast/f1',
         timeout: 10000,
         responseType: 'json',
       });

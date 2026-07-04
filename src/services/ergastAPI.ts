@@ -67,22 +67,36 @@ export class ErgastService {
   }
 
   async getStandings(season: string, round?: string): Promise<StandingsTable> {
-    return this.withRetry(async () => {
-      try {
-        const path = round ? `/${season}/${round}/standings.json` : `/${season}/standings.json`;
-        const response = await this.api.get<ErgastResponse<any>>(path);
-        const standingsTable = response.data.MRData.StandingsTable || {};
-        return {
-          season: standingsTable.season,
-          round: standingsTable.round,
-          driverStandings: standingsTable.StandingsList?.[0]?.DriverStandings || [],
-          constructorStandings: standingsTable.StandingsList?.[0]?.ConstructorStandings || [],
-        };
-      } catch (error) {
-        console.error(`Failed to get standings for ${season}/${round}:`, error);
-        throw error;
-      }
-    });
+    // The combined `/{season}/standings.json` endpoint does NOT exist on jolpica
+    // (returns HTTP 400). Driver and constructor standings must be fetched from
+    // two separate endpoints and merged into the StandingsTable shape.
+    const driverPath = round
+      ? `/${season}/${round}/driverStandings.json`
+      : `/${season}/driverStandings.json`;
+    const constructorPath = round
+      ? `/${season}/${round}/constructorStandings.json`
+      : `/${season}/constructorStandings.json`;
+
+    try {
+      const [driverResponse, constructorResponse] = await Promise.all([
+        this.withRetry(() => this.api.get<ErgastResponse<any>>(driverPath)),
+        this.withRetry(() => this.api.get<ErgastResponse<any>>(constructorPath)),
+      ]);
+
+      const driverList = driverResponse.data.MRData.StandingsTable?.StandingsList?.[0] || {};
+      const constructorList =
+        constructorResponse.data.MRData.StandingsTable?.StandingsList?.[0] || {};
+
+      return {
+        season: driverList.season || constructorList.season || season,
+        round: driverList.round || constructorList.round || round || '',
+        driverStandings: driverList.DriverStandings || [],
+        constructorStandings: constructorList.ConstructorStandings || [],
+      };
+    } catch (error) {
+      console.error(`Failed to get standings for ${season}/${round}:`, error);
+      throw error;
+    }
   }
 
   async getRaceResults(season: string, round: string): Promise<RaceResult[]> {
