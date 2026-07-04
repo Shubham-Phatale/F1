@@ -34,12 +34,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, variant = 'defa
     >
       <View style={styles.content}>
         {icon && (
-          <MaterialCommunityIcons
-            name={icon as any}
-            size={20}
-            color="#666"
-            style={styles.icon}
-          />
+          <MaterialCommunityIcons name={icon as any} size={20} color="#666" style={styles.icon} />
         )}
         <View style={styles.textContainer}>
           <Text variant="labelSmall" style={styles.label}>

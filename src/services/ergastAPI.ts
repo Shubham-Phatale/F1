@@ -20,10 +20,7 @@ export class ErgastService {
     });
   }
 
-  private async withRetry<T>(
-    fn: () => Promise<T>,
-    maxRetries = 3
-  ): Promise<T> {
+  private async withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
     let lastError: any;
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -31,9 +28,7 @@ export class ErgastService {
       } catch (error) {
         lastError = error;
         if (i < maxRetries - 1) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 * Math.pow(2, i))
-          );
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
         }
       }
     }
@@ -59,10 +54,9 @@ export class ErgastService {
   async getRacesByYear(year: string): Promise<Race[]> {
     return this.withRetry(async () => {
       try {
-        const response = await this.api.get<ErgastResponse<any>>(
-          `/${year}.json`,
-          { params: { limit: 100 } }
-        );
+        const response = await this.api.get<ErgastResponse<any>>(`/${year}.json`, {
+          params: { limit: 100 },
+        });
         const races = response.data.MRData.RaceTable?.Races || [];
         return races.map((race: any) => this.transformRace(race));
       } catch (error) {
@@ -72,10 +66,7 @@ export class ErgastService {
     });
   }
 
-  async getStandings(
-    season: string,
-    round?: string
-  ): Promise<StandingsTable> {
+  async getStandings(season: string, round?: string): Promise<StandingsTable> {
     return this.withRetry(async () => {
       try {
         const path = round ? `/${season}/${round}/standings.json` : `/${season}/standings.json`;
@@ -127,9 +118,7 @@ export class ErgastService {
   async getDriver(driverId: string): Promise<Driver> {
     return this.withRetry(async () => {
       try {
-        const response = await this.api.get<ErgastResponse<any>>(
-          `/drivers/${driverId}.json`
-        );
+        const response = await this.api.get<ErgastResponse<any>>(`/drivers/${driverId}.json`);
         const driver = response.data.MRData.DriverTable?.Drivers?.[0];
         if (!driver) throw new Error('Driver not found');
         return driver as Driver;

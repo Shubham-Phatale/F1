@@ -10,7 +10,7 @@ const CalendarScreen: React.FC = () => {
   const dispatch = useAppDispatch();
 
   // Get races state from Redux
-  const { selectedSeason, allRaces, loading } = useAppSelector((state) => state.races);
+  const { selectedSeason, allRaces, loading } = useAppSelector(state => state.races);
 
   // Local state for display season
   const [displaySeason, setDisplaySeason] = useState<string>(selectedSeason);
@@ -66,7 +66,7 @@ const CalendarScreen: React.FC = () => {
       {/* Races List */}
       {!loading && allRaces.length > 0 && (
         <View>
-          {allRaces.map((race) => (
+          {allRaces.map(race => (
             <RaceCard key={race.raceId} race={race} />
           ))}
         </View>
@@ -75,9 +75,7 @@ const CalendarScreen: React.FC = () => {
       {/* Empty State */}
       {!loading && allRaces.length === 0 && (
         <View style={styles.emptyStateContainer}>
-          <Text style={styles.emptyStateText}>
-            No races found for this season
-          </Text>
+          <Text style={styles.emptyStateText}>No races found for this season</Text>
         </View>
       )}
 

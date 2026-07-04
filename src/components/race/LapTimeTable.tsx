@@ -9,10 +9,7 @@ interface LapTimeTableProps {
   title?: string;
 }
 
-const LapTimeTable: React.FC<LapTimeTableProps> = ({
-  results,
-  title = 'Qualifying Results',
-}) => {
+const LapTimeTable: React.FC<LapTimeTableProps> = ({ results, title = 'Qualifying Results' }) => {
   const renderRow = ({ item, index }: { item: QualifyingResult; index: number }) => {
     // Get best lap time: Q3 > Q2 > Q1
     const bestLapTime = item.q3 || item.q2 || item.q1 || '--:--';

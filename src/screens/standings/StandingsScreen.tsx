@@ -16,11 +16,11 @@ const StandingsScreen: React.FC = () => {
   const [standingsType, setStandingsType] = useState<StandingsType>('drivers');
 
   // Get races state to access selectedSeason
-  const racesState = useAppSelector((state) => state.races);
+  const racesState = useAppSelector(state => state.races);
   const { selectedSeason } = racesState;
 
   // Get standings state
-  const standingsState = useAppSelector((state) => state.standings);
+  const standingsState = useAppSelector(state => state.standings);
   const { driverStandings, constructorStandings, loading } = standingsState;
 
   // Fetch standings when season changes
@@ -43,7 +43,7 @@ const StandingsScreen: React.FC = () => {
       <View style={styles.typeSelector}>
         <SegmentedButtons
           value={standingsType}
-          onValueChange={(value) => setStandingsType(value as StandingsType)}
+          onValueChange={value => setStandingsType(value as StandingsType)}
           buttons={[
             { value: 'drivers', label: 'Drivers' },
             { value: 'constructors', label: 'Constructors' },

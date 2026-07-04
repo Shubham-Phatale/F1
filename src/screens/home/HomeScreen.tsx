@@ -13,11 +13,11 @@ const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
 
   // Get races state
-  const racesState = useAppSelector((state) => state.races);
+  const racesState = useAppSelector(state => state.races);
   const { selectedSeason, allRaces, loading: racesLoading, error: racesError } = racesState;
 
   // Get standings state
-  const standingsState = useAppSelector((state) => state.standings);
+  const standingsState = useAppSelector(state => state.standings);
   const { driverStandings, loading: standingsLoading, error: standingsError } = standingsState;
 
   // Fetch current season on component mount
@@ -46,7 +46,8 @@ const HomeScreen: React.FC = () => {
   const latestRace = allRaces && allRaces.length > 0 ? allRaces[0] : null;
 
   // Get championship leader (first standing)
-  const championshipLeader = driverStandings && driverStandings.length > 0 ? driverStandings[0] : null;
+  const championshipLeader =
+    driverStandings && driverStandings.length > 0 ? driverStandings[0] : null;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -63,9 +64,7 @@ const HomeScreen: React.FC = () => {
       {/* Error Message */}
       {(racesError || standingsError) && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            {racesError || standingsError}
-          </Text>
+          <Text style={styles.errorText}>{racesError || standingsError}</Text>
         </View>
       )}
 
@@ -81,9 +80,7 @@ const HomeScreen: React.FC = () => {
           <RaceCard race={latestRace} />
         ) : (
           <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>
-              No races available
-            </Text>
+            <Text style={styles.emptyStateText}>No races available</Text>
           </View>
         )}
       </View>
@@ -132,9 +129,7 @@ const HomeScreen: React.FC = () => {
           </View>
         ) : (
           <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>
-              No standings available
-            </Text>
+            <Text style={styles.emptyStateText}>No standings available</Text>
           </View>
         )}
       </View>

@@ -58,9 +58,7 @@ export function formatTime(timeString: string | undefined | null): string {
  * @param milliseconds Duration in milliseconds
  * @returns Formatted duration string or "--:--" on error
  */
-export function formatDuration(
-  milliseconds: number | string | undefined | null
-): string {
+export function formatDuration(milliseconds: number | string | undefined | null): string {
   if (milliseconds === null || milliseconds === undefined) {
     return '--:--';
   }
@@ -246,7 +244,7 @@ export function isRaceFinished(status: string | undefined | null): boolean {
     /disqualified/i,
   ];
 
-  return finishedPatterns.some((pattern) => pattern.test(statusLower));
+  return finishedPatterns.some(pattern => pattern.test(statusLower));
 }
 
 /**
@@ -287,13 +285,13 @@ export function getRaceStatus(status: string | undefined | null): string {
       suspension: 'Suspension',
       disqualified: 'Disqualified',
       excluded: 'Excluded',
-      +lap: 'Lapped',
+      lap: 'Lapped',
       lapped: 'Lapped',
       spun: 'Spun',
       fuel: 'Fuel Problem',
       power: 'Power Unit',
       'did not qualify': 'DNQ',
-      'withdrew': 'Withdrew',
+      withdrew: 'Withdrew',
       'did not start': 'DNS',
       'not classified': 'NC',
     };
@@ -313,7 +311,7 @@ export function getRaceStatus(status: string | undefined | null): string {
     // If no match found, return the original status in title case
     return statusTrimmed
       .split(' ')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   } catch {
     return 'Unknown';

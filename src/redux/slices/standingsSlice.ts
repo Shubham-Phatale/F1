@@ -7,18 +7,15 @@ export const fetchStandings = createAsyncThunk<
   StandingsTable,
   { season: string; round?: string },
   { rejectValue: string }
->(
-  'standings/fetch',
-  async ({ season, round }, { rejectWithValue }) => {
-    try {
-      const standings = await ergastService.getStandings(season, round);
-      return standings;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch standings';
-      return rejectWithValue(message);
-    }
+>('standings/fetch', async ({ season, round }, { rejectWithValue }) => {
+  try {
+    const standings = await ergastService.getStandings(season, round);
+    return standings;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch standings';
+    return rejectWithValue(message);
   }
-);
+});
 
 // Initial state
 const initialState: StandingsState = {
@@ -35,12 +32,12 @@ const standingsSlice = createSlice({
   name: 'standings',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
-    builder.addCase(fetchStandings.pending, (state) => {
+  extraReducers: builder => {
+    builder.addCase(fetchStandings.pending, state => {
       state.loading = true;
       state.error = null;
     });

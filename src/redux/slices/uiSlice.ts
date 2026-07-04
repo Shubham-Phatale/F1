@@ -26,7 +26,7 @@ const uiSlice = createSlice({
     setSelectedConstructorFilter: (state, action: PayloadAction<string | null>) => {
       state.selectedConstructorFilter = action.payload;
     },
-    resetFilters: (state) => {
+    resetFilters: state => {
       state.selectedRaceId = null;
       state.selectedSeasonFilter = '';
       state.selectedDriverFilter = null;

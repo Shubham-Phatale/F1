@@ -3,11 +3,7 @@ import { RacesState, Race } from '@/types';
 import { ergastService } from '@/services/ergastAPI';
 
 // Async thunks
-export const fetchRacesByYear = createAsyncThunk<
-  Race[],
-  string,
-  { rejectValue: string }
->(
+export const fetchRacesByYear = createAsyncThunk<Race[], string, { rejectValue: string }>(
   'races/fetchByYear',
   async (year, { rejectWithValue }) => {
     try {
@@ -20,11 +16,7 @@ export const fetchRacesByYear = createAsyncThunk<
   }
 );
 
-export const fetchCurrentSeason = createAsyncThunk<
-  string,
-  void,
-  { rejectValue: string }
->(
+export const fetchCurrentSeason = createAsyncThunk<string, void, { rejectValue: string }>(
   'races/fetchCurrentSeason',
   async (_, { rejectWithValue }) => {
     try {
@@ -53,13 +45,13 @@ const racesSlice = createSlice({
     setSelectedSeason: (state, action: PayloadAction<string>) => {
       state.selectedSeason = action.payload;
     },
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     // fetchRacesByYear
-    builder.addCase(fetchRacesByYear.pending, (state) => {
+    builder.addCase(fetchRacesByYear.pending, state => {
       state.loading = true;
       state.error = null;
     });
@@ -73,7 +65,7 @@ const racesSlice = createSlice({
     });
 
     // fetchCurrentSeason
-    builder.addCase(fetchCurrentSeason.pending, (state) => {
+    builder.addCase(fetchCurrentSeason.pending, state => {
       state.loading = true;
       state.error = null;
     });

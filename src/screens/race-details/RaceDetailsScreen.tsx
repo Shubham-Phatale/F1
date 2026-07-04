@@ -34,15 +34,15 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
   const [displayTab, setDisplayTab] = useState<DisplayTab>('results');
 
   // Get races data
-  const racesState = useAppSelector((state) => state.races);
+  const racesState = useAppSelector(state => state.races);
   const { allRaces } = racesState;
 
   // Get results data
-  const resultsState = useAppSelector((state) => state.results);
+  const resultsState = useAppSelector(state => state.results);
   const { results, qualifyingResults, loading } = resultsState;
 
   // Find race from allRaces by matching round
-  const race = allRaces.find((r) => r.round === round);
+  const race = allRaces.find(r => r.round === round);
 
   // Set selected race ID and fetch data when params change
   useEffect(() => {
@@ -75,7 +75,7 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
       <View style={styles.tabSelectorContainer}>
         <SegmentedButtons
           value={displayTab}
-          onValueChange={(value) => setDisplayTab(value as DisplayTab)}
+          onValueChange={value => setDisplayTab(value as DisplayTab)}
           buttons={[
             { value: 'results', label: 'Results' },
             { value: 'qualifying', label: 'Qualifying' },
@@ -94,9 +94,7 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
             <ResultsTable results={results} />
           ) : (
             <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>
-                No race results available
-              </Text>
+              <Text style={styles.emptyStateText}>No race results available</Text>
             </View>
           )}
         </View>
@@ -109,9 +107,7 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
             <LapTimeTable results={qualifyingResults} title="Qualifying Results" />
           ) : (
             <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>
-                No qualifying results available
-              </Text>
+              <Text style={styles.emptyStateText}>No qualifying results available</Text>
             </View>
           )}
         </View>

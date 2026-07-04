@@ -7,35 +7,29 @@ export const fetchRaceResults = createAsyncThunk<
   RaceResult[],
   { season: string; round: string },
   { rejectValue: string }
->(
-  'results/fetchRaceResults',
-  async ({ season, round }, { rejectWithValue }) => {
-    try {
-      const results = await ergastService.getRaceResults(season, round);
-      return results;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch race results';
-      return rejectWithValue(message);
-    }
+>('results/fetchRaceResults', async ({ season, round }, { rejectWithValue }) => {
+  try {
+    const results = await ergastService.getRaceResults(season, round);
+    return results;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch race results';
+    return rejectWithValue(message);
   }
-);
+});
 
 export const fetchQualifyingResults = createAsyncThunk<
   QualifyingResult[],
   { season: string; round: string },
   { rejectValue: string }
->(
-  'results/fetchQualifyingResults',
-  async ({ season, round }, { rejectWithValue }) => {
-    try {
-      const results = await ergastService.getQualifying(season, round);
-      return results;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch qualifying results';
-      return rejectWithValue(message);
-    }
+>('results/fetchQualifyingResults', async ({ season, round }, { rejectWithValue }) => {
+  try {
+    const results = await ergastService.getQualifying(season, round);
+    return results;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch qualifying results';
+    return rejectWithValue(message);
   }
-);
+});
 
 // Initial state
 const initialState: ResultsState = {
@@ -54,13 +48,13 @@ const resultsSlice = createSlice({
     setSelectedRaceId: (state, action: PayloadAction<string | null>) => {
       state.selectedRaceId = action.payload;
     },
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     // fetchRaceResults
-    builder.addCase(fetchRaceResults.pending, (state) => {
+    builder.addCase(fetchRaceResults.pending, state => {
       state.loading = true;
       state.error = null;
     });
@@ -74,7 +68,7 @@ const resultsSlice = createSlice({
     });
 
     // fetchQualifyingResults
-    builder.addCase(fetchQualifyingResults.pending, (state) => {
+    builder.addCase(fetchQualifyingResults.pending, state => {
       state.loading = true;
       state.error = null;
     });

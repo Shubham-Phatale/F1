@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  Animated,
-  StyleSheet,
-  useWindowDimensions,
-  ViewStyle,
-} from 'react-native';
+import { View, Animated, StyleSheet, useWindowDimensions, ViewStyle } from 'react-native';
 
 interface SkeletonLoaderProps {
   width?: number;

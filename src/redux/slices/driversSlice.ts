@@ -17,12 +17,12 @@ const driversSlice = createSlice({
       state.drivers = action.payload;
     },
     addDriver: (state, action: PayloadAction<Driver>) => {
-      const exists = state.drivers.some((d) => d.driverId === action.payload.driverId);
+      const exists = state.drivers.some(d => d.driverId === action.payload.driverId);
       if (!exists) {
         state.drivers.push(action.payload);
       }
     },
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
