@@ -28,8 +28,11 @@ Transform the working F1 stats app into a production-ready, visually striking pr
 | Fonts | Titillium Web (headings/numbers) + Inter (body) — both open-license via `@expo-google-fonts` |
 | Flags | flagcdn.com remote URLs |
 | Team identity | Team **names as text** + team **colors** as accents; **no team logos** |
-| Driver/circuit photos | **Bundled** CC/public-domain assets, with attribution + badge fallback |
+| Driver photos | **OpenF1 `headshot_url`** (runtime hot-link, matched by driver code) + `DriverBadge` fallback. Personal/unpublished use; nothing copyrighted committed to the repo. |
+| Team colors | **OpenF1 `team_colour`** (official hex; colors are not protected) |
+| Circuit photos | None — styled placeholder header (flag + name on dark surface). Real circuit imagery is out of scope for this phase. |
 | Scope | Full redesign, all 11 screens, via shared design system |
+| Context | **Personal, unpublished project** — lower IP risk; disclaimer + courtesy credits still included |
 
 ---
 
@@ -74,7 +77,7 @@ podiumBronze    #cd7f4d
 | `TeamColorBar` | Vertical/dot team-color accent |
 | `Flag` | Country flag via flagcdn (with country→ISO2 lookup) |
 | `PositionBadge` | Position number, podium-colored for top 3 |
-| `SmartImage` | Bundled image with graceful fallback to badge/placeholder |
+| `SmartImage` | Remote/bundled image with graceful fallback to badge/placeholder on load error |
 | `Skeleton` (dark) | Dark-theme loading skeleton |
 | `AttributionText` | Small "Photo: author, license" line |
 
@@ -84,21 +87,22 @@ podiumBronze    #cd7f4d
 
 ### Structure
 ```
-assets/
-├── images/
-│   ├── drivers/{driverId}.jpg       curated CC/PD headshots (current-season set)
-│   └── circuits/{circuitId}.jpg     curated CC/PD circuit photos
-├── attributions.json                { id: { author, license, sourceUrl } }
+src/services/
+├── openF1Service.ts                 fetch drivers (headshot_url, team_colour, name_acronym) + cache
 src/theme/
-├── teamColors.ts                    constructorId → hex (colors are not protected)
+├── teamColors.ts                    team name/id → hex, seeded from OpenF1 official team_colour
 ├── countryCodes.ts                  country name → ISO2 (for flagcdn)
 ```
 
 ### Rules
 - **Flags:** `https://flagcdn.com/w80/{iso2}.png` (remote, cached). Country-name→ISO2 map covers all race countries.
-- **Photos:** bundled; `SmartImage` shows the asset if present, else falls back to `DriverBadge` (drivers) or a themed placeholder (circuits). Never crashes on a missing image.
-- **Attribution:** every bundled image has an entry in `attributions.json`; the Credits screen renders all of them. Required for CC-BY / CC-BY-SA.
-- **Curation:** images sourced from Wikimedia Commons, **only** PD / CC0 / CC-BY / CC-BY-SA licenses, vetted at curation time. Non-free → skipped (badge fallback).
+- **Driver photos:** `openF1Service` fetches the driver list for the latest (or a given) session once and caches a map keyed by **`name_acronym`** (e.g. `VER`), exposing `{ headshotUrl, teamColour, teamName }`. Screens match an Ergast driver via its `code` (Ergast `code` ↔ OpenF1 `name_acronym`). `SmartImage` renders the OpenF1 `headshot_url`; on missing/failed load (e.g. pre-2023 drivers not in OpenF1), it falls back to `DriverBadge` (initials on team color). Never crashes on a missing image.
+- **Team colors:** `teamColors.ts` is a static map seeded from OpenF1's official `team_colour` values (accurate hex; colors are not protected), with a neutral default for unknown teams. `DriverBadge` / `TeamColorBar` use it.
+- **Circuit headers:** styled placeholder — circuit name + country flag on a dark crimson-accented surface. No external circuit photo this phase.
+- **Credits/About screen:** shows the disclaimer plus courtesy credits — *"Driver images © Formula 1, via the OpenF1 API"* and *"Race data via Ergast/Jolpica and OpenF1 (CC-BY)."* No Wikimedia curation or per-image license DB needed for this phase.
+
+### Note on OpenF1 licensing
+OpenF1's **data** is CC-BY (attribute OpenF1). Its `headshot_url` points to **official Formula 1 all-rights-reserved images** — OpenF1 exposes the URL but does not license the image. For this **personal, unpublished** project we hot-link them at runtime (nothing committed to the repo) with a courtesy credit. If the project were ever published, driver photos would be swapped to bundled Wikimedia CC/PD images (the fallback `DriverBadge` already covers the gap).
 
 ---
 
@@ -108,10 +112,10 @@ src/theme/
 - **Home** — dark hero; "Latest Race" card (flag, crimson accent bar, circuit); "Championship Leader" card (driver badge, team color, points); quick-stat pills.
 - **Calendar** — race cards with flag, round badge, date; next race highlighted in crimson; past/upcoming states.
 - **Standings** — driver rows: `PositionBadge` (podium colors top 3), `DriverBadge`, `TeamColorBar`, points; constructor rows: team-color accent. Restyled segmented toggle.
-- **Race Details** — circuit photo header (`SmartImage`) with overlay title + flag; results table with position badges + fastest-lap highlight; qualifying tab.
+- **Race Details** — styled circuit header (name + flag on dark crimson-accented surface, no photo); results table with position badges + fastest-lap highlight; qualifying tab.
 
 **Analytics**
-- **Driver Detail** — driver photo header + team color; stat grid (`StatCard`); Skia `TrendChart` restyled to dark palette (crimson line, subtle grid, muted axis).
+- **Driver Detail** — driver photo header (OpenF1 `headshot_url` via `SmartImage`, `DriverBadge` fallback) + team color; stat grid (`StatCard`); Skia `TrendChart` restyled to dark palette (crimson line, subtle grid, muted axis).
 - **Head-to-Head** — two driver badges/photos opposed; comparison bars in crimson vs neutral; winner highlight.
 - **Trend Analysis** — dark Skia chart; restyled metric `SegmentedButtons`.
 - **Constructor Analysis** — team-color-themed header; stat grid.
@@ -129,12 +133,13 @@ Each screen swaps to shared components + tokens; layout logic is mostly unchange
 
 ## IP-Safety Checklist (enforced during build)
 
+- **Personal, unpublished** project — not distributed to any app store
 - No F1 logo; no Formula1 proprietary font (Titillium Web/Inter only)
 - Crimson `#dc0a2d` (distinct from official red)
 - Team **names as text**, **colors** as accents; **no team logos**
-- Disclaimer on About screen, app footer, and README: *"Unofficial app. Not affiliated with Formula 1, the FIA, or any team. Race data via the Ergast/Jolpica API."*
-- Image attribution screen (author + license per image)
-- Only CC/PD bundled images, vetted at curation
+- Disclaimer on About screen, app footer, and README: *"Unofficial app. Not affiliated with Formula 1, the FIA, or any team. Race data via the Ergast/Jolpica and OpenF1 APIs."*
+- Courtesy credits on the About screen: driver images © Formula 1 (via OpenF1); data CC-BY OpenF1
+- No copyrighted images **committed** to the repo (driver photos are runtime hot-links only)
 
 ---
 
@@ -151,9 +156,16 @@ Each screen swaps to shared components + tokens; layout logic is mostly unchange
 ## Architecture Notes / Risks
 
 - **Font loading:** the app must wait for `useFonts` before rendering text-heavy screens, or show a splash; unloaded custom fonts render as system fallback (acceptable) — but we gate on load for polish.
-- **Bundle size:** bundled photos increase app size; keep images web-optimized (~50–100 KB each), current-season set only.
-- **Missing images:** `SmartImage` fallback is mandatory so partial asset coverage never breaks a screen (we already saw how one missing field white-screened the app).
+- **OpenF1 matching & coverage:** Ergast `code` ↔ OpenF1 `name_acronym` is the join key; OpenF1 only covers **2023+**, so pre-2023 drivers won't have a headshot → `DriverBadge` fallback (expected, not a bug). `openF1Service` caches the driver map to respect OpenF1 rate limits.
+- **Missing images:** `SmartImage` fallback (badge/placeholder on load error) is mandatory so a missing/failed image never breaks a screen (we already saw how one missing field white-screened the app).
 - **Redux-persist:** theme is not persisted; no migration needed. Data-shape unchanged, so no persist-version bump required for this work.
+
+---
+
+## Roadmap (future phases, separate specs)
+
+- **Telemetry visualizations (OpenF1):** live/near-live car telemetry (speed, throttle, brake, DRS, gear) and track position (x/y) from OpenF1's `car_data` + `location` endpoints → throttle/brake traces, speed-on-track dominance maps, gear maps. Covers 2023+ sessions. The single most impressive "wow" visualization layer; built after this design overhaul.
+- **Phase 3B–3D:** predictions + leaderboard, forums, notifications (already planned).
 
 ---
 
