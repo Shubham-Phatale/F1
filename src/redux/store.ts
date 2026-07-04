@@ -16,6 +16,8 @@ import driversReducer from './slices/driversSlice';
 import resultsReducer from './slices/resultsSlice';
 import uiReducer from './slices/uiSlice';
 import analyticsReducer from './slices/analyticsSlice';
+import authReducer from './slices/authSlice';
+import usersReducer from './slices/usersSlice';
 
 // Redux Persist configuration
 const persistConfig = {
@@ -32,6 +34,8 @@ const rootReducer = combineReducers({
   drivers: driversReducer,
   ui: uiReducer,
   analytics: analyticsReducer,
+  auth: authReducer,
+  users: usersReducer,
 });
 
 // Apply persist to root reducer

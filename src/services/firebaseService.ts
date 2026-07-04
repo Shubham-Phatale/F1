@@ -8,6 +8,11 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/config/firebase';
+import type { UserProfile } from '@/types';
+
+// Re-export so existing consumers importing `UserProfile` from this service
+// continue to work; the canonical definition now lives in `src/types`.
+export type { UserProfile };
 
 /**
  * Minimal, consistent shape returned by every auth method. A formal
@@ -19,22 +24,6 @@ export interface AuthUser {
   uid: string;
   email: string;
   displayName: string;
-}
-
-/**
- * Firestore-backed user profile document. Stored in the `users` collection with
- * the auth `uid` as the document id. Task 4 will move this interface to
- * `src/types` (keeping the same field names) and formalize it app-wide.
- */
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  avatarUrl?: string;
-  bio?: string;
-  favoriteDriverId?: string;
-  favoriteConstructorId?: string;
-  joinedAt: string;
 }
 
 /**

@@ -246,6 +246,34 @@ export interface ConstructorStats {
   averageDriverRating: number;
 }
 
+// Auth & User types - Phase 3A
+// Firestore-backed user profile document. Stored in the `users` collection with
+// the auth `uid` as the document id.
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  avatarUrl?: string;
+  bio?: string;
+  favoriteDriverId?: string;
+  favoriteConstructorId?: string;
+  joinedAt: string;
+}
+
+export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'error';
+
+export interface AuthState {
+  user: UserProfile | null;
+  status: AuthStatus;
+  error: string | null;
+}
+
+export interface UsersState {
+  byId: Record<string, UserProfile>;
+  loading: boolean;
+  error: string | null;
+}
+
 // Redux state for analytics
 export interface AnalyticsState {
   driverStats: DriverStats[];
