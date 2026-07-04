@@ -625,6 +625,7 @@ describe('ErgastService', () => {
       // total = 150 rows, so a second page (offset 100) is genuinely needed.
       const page1 = makePage(150, 0, [
         {
+          season: '2024',
           round: '1',
           raceName: 'Bahrain GP',
           Results: [makeResult('verstappen', '1'), makeResult('perez', '2')],
@@ -632,6 +633,7 @@ describe('ErgastService', () => {
       ]);
       const page2 = makePage(150, 100, [
         {
+          season: '2024',
           round: '2',
           raceName: 'Saudi GP',
           Results: [makeResult('leclerc', '1')],
@@ -647,6 +649,15 @@ describe('ErgastService', () => {
 
       expect(results).toHaveLength(3);
       expect(results.map(r => r.driver.driverId)).toEqual(['verstappen', 'perez', 'leclerc']);
+      // Each flattened result should carry its parent race's identity so
+      // downstream consumers can group by race.
+      expect(results[0].season).toBe('2024');
+      expect(results[0].round).toBe('1');
+      expect(results[0].raceName).toBe('Bahrain GP');
+      expect(results[1].round).toBe('1');
+      expect(results[2].season).toBe('2024');
+      expect(results[2].round).toBe('2');
+      expect(results[2].raceName).toBe('Saudi GP');
       // Two pages should have been fetched (offset 0 and offset 100).
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2024/results.json', {
         params: { limit: 100, offset: 0 },

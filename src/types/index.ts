@@ -45,6 +45,12 @@ export interface Race {
 
 // Race Result
 export interface RaceResult {
+  // Optional race identity, attached when results are aggregated across a whole
+  // season (e.g. getSeasonResults). Single-race fetches (getRaceResults) leave
+  // these undefined.
+  season?: string;
+  round?: string;
+  raceName?: string;
   number: string;
   position: string;
   positionText: string;

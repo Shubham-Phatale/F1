@@ -118,16 +118,24 @@ export class AnalyticsService {
   /**
    * Compare two drivers head-to-head over a shared set of season results.
    *
-   * `seasonResults` is a full season's flattened `RaceResult[]` (from
-   * `ergastAPI.getSeasonResults`). Because `RaceResult` carries NO race/round
-   * identifier once flattened, we cannot reliably group results by race.
+   * `seasonResults` is a season's flattened `RaceResult[]` (from
+   * `ergastAPI.getSeasonResults`), where each result now carries its parent
+   * race's `season`/`round` identity.
    *
-   * Approach / limitation: we filter the shared set into each driver's own
-   * finishing results (numeric position only), sort each list by finishing
-   * position ascending, and pair them by index. `racesMet` is approximated as
-   * `min(count1, count2)`. For each paired race the driver with the lower
-   * finishing position wins that head-to-head; equal positions count as a draw
-   * (should not happen for real finishing positions but guarded anyway).
+   * Primary approach (TRUE per-race head-to-head): we group both drivers'
+   * numeric finishing positions by race key (`season + '|' + round`, falling
+   * back to `round` alone). For every race where BOTH drivers have a numeric
+   * finishing position, the driver who finished lower (better) wins that race;
+   * equal positions count as a draw. `racesMet` is the number of such shared
+   * races. `competitionYears` is the distinct set of seasons across those
+   * shared races.
+   *
+   * Fallback: if the results carry no `round` identity (older data path), we
+   * degrade gracefully to the previous index-pairing approach — each driver's
+   * finishes sorted ascending and paired by index, `racesMet = min(count1,
+   * count2)` — and `competitionYears` is derived from whatever `season` values
+   * are present (may be empty).
+   *
    * Pole positions and fastest laps are counted directly from each driver's
    * results across the whole shared set.
    */
@@ -136,13 +144,6 @@ export class AnalyticsService {
     driver2: Driver,
     seasonResults: RaceResult[]
   ): HeadToHeadComparison {
-    const numericFinishes = (driverId: string): number[] =>
-      seasonResults
-        .filter(r => r.driver.driverId === driverId)
-        .map(r => parseInt(r.position, 10))
-        .filter(pos => Number.isFinite(pos) && pos > 0)
-        .sort((a, b) => a - b);
-
     const countPoles = (driverId: string): number =>
       seasonResults.filter(r => r.driver.driverId === driverId && r.grid === '1').length;
 
@@ -151,22 +152,105 @@ export class AnalyticsService {
         r => r.driver.driverId === driverId && r.fastestLap?.rank === '1'
       ).length;
 
-    const d1Finishes = numericFinishes(driver1.driverId);
-    const d2Finishes = numericFinishes(driver2.driverId);
+    const numericPosition = (r: RaceResult): number | null => {
+      const pos = parseInt(r.position, 10);
+      return Number.isFinite(pos) && pos > 0 ? pos : null;
+    };
 
-    const racesMet = Math.min(d1Finishes.length, d2Finishes.length);
+    // Detect whether we can group by race. If no result carries a `round`, we
+    // fall back to the legacy index-pairing behaviour.
+    const canGroupByRace = seasonResults.some(
+      r => r.driver.driverId === driver1.driverId || r.driver.driverId === driver2.driverId
+    )
+      ? seasonResults
+          .filter(
+            r =>
+              r.driver.driverId === driver1.driverId ||
+              r.driver.driverId === driver2.driverId
+          )
+          .some(r => r.round !== undefined)
+      : false;
 
+    let racesMet = 0;
     let driver1Wins = 0;
     let driver2Wins = 0;
     let draws = 0;
-    for (let i = 0; i < racesMet; i++) {
-      if (d1Finishes[i] < d2Finishes[i]) {
-        driver1Wins++;
-      } else if (d2Finishes[i] < d1Finishes[i]) {
-        driver2Wins++;
-      } else {
-        draws++;
+    let competitionYears: string[] = [];
+
+    if (canGroupByRace) {
+      // race key -> { d1Position?, d2Position?, season? }
+      const byRace = new Map<
+        string,
+        { d1?: number; d2?: number; season?: string }
+      >();
+
+      for (const r of seasonResults) {
+        const isD1 = r.driver.driverId === driver1.driverId;
+        const isD2 = r.driver.driverId === driver2.driverId;
+        if (!isD1 && !isD2) continue;
+
+        const key = `${r.season ?? ''}|${r.round ?? ''}`;
+        const entry = byRace.get(key) ?? {};
+        if (r.season !== undefined) entry.season = r.season;
+
+        const pos = numericPosition(r);
+        if (pos !== null) {
+          if (isD1) entry.d1 = pos;
+          if (isD2) entry.d2 = pos;
+        }
+        byRace.set(key, entry);
       }
+
+      const seasonSet = new Set<string>();
+      for (const entry of byRace.values()) {
+        if (entry.d1 === undefined || entry.d2 === undefined) continue;
+        racesMet++;
+        if (entry.d1 < entry.d2) {
+          driver1Wins++;
+        } else if (entry.d2 < entry.d1) {
+          driver2Wins++;
+        } else {
+          draws++;
+        }
+        if (entry.season) seasonSet.add(entry.season);
+      }
+
+      competitionYears = Array.from(seasonSet).sort();
+    } else {
+      // Fallback: legacy index-pairing over each driver's sorted finishes.
+      const numericFinishes = (driverId: string): number[] =>
+        seasonResults
+          .filter(r => r.driver.driverId === driverId)
+          .map(r => parseInt(r.position, 10))
+          .filter(pos => Number.isFinite(pos) && pos > 0)
+          .sort((a, b) => a - b);
+
+      const d1Finishes = numericFinishes(driver1.driverId);
+      const d2Finishes = numericFinishes(driver2.driverId);
+
+      racesMet = Math.min(d1Finishes.length, d2Finishes.length);
+      for (let i = 0; i < racesMet; i++) {
+        if (d1Finishes[i] < d2Finishes[i]) {
+          driver1Wins++;
+        } else if (d2Finishes[i] < d1Finishes[i]) {
+          driver2Wins++;
+        } else {
+          draws++;
+        }
+      }
+
+      // Seasons may still be derivable from whatever `season` fields exist.
+      const seasonSet = new Set<string>();
+      for (const r of seasonResults) {
+        if (
+          (r.driver.driverId === driver1.driverId ||
+            r.driver.driverId === driver2.driverId) &&
+          r.season !== undefined
+        ) {
+          seasonSet.add(r.season);
+        }
+      }
+      competitionYears = Array.from(seasonSet).sort();
     }
 
     const comparison: HeadToHeadComparison = {
@@ -182,9 +266,7 @@ export class AnalyticsService {
       driver2PolePositions: countPoles(driver2.driverId),
       driver1FastestLaps: countFastestLaps(driver1.driverId),
       driver2FastestLaps: countFastestLaps(driver2.driverId),
-      // A flattened single-season RaceResult[] carries no season field, so the
-      // competing seasons are not derivable here.
-      competitionYears: [],
+      competitionYears,
     };
 
     return comparison;

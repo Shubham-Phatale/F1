@@ -178,8 +178,16 @@ export class ErgastService {
       }
 
       for (const race of races) {
-        const results = (race.Results || []) as RaceResult[];
-        allResults.push(...results);
+        const rawResults = (race.Results || []) as RaceResult[];
+        // Attach the parent race's identity onto each flattened result so that
+        // downstream consumers (e.g. per-race head-to-head) can group by race.
+        const enriched = rawResults.map(result => ({
+          ...result,
+          season: race.season,
+          round: race.round,
+          raceName: race.raceName,
+        }));
+        allResults.push(...enriched);
       }
 
       offset += PAGE_LIMIT;

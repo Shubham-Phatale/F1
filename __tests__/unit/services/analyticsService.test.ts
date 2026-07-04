@@ -193,20 +193,64 @@ describe('AnalyticsService', () => {
         averageSpeed: { speed: '210.5', units: 'kph' },
       };
 
-      // Three races. After sorting each driver's finishes ascending:
-      //   driver1 (VER): [1, 2, 5]
-      //   driver2 (HAM): [2, 3, 4]
-      // Paired by index: 1<2 (d1), 2<3 (d1), 5>4 (d2) => d1 wins 2, d2 wins 1.
+      // Three actual races, grouped by round (TRUE per-race head-to-head):
+      //   Round 1: VER P1  vs HAM P2  => driver1 wins
+      //   Round 2: VER P5  vs HAM P3  => driver2 wins
+      //   Round 3: VER P2  vs HAM P4  => driver1 wins
+      // => driver1Wins=2, driver2Wins=1, racesMet=3.
       const seasonResults: RaceResult[] = [
-        // Race A
-        buildResult({ driver: driver1, position: '1', grid: '1', points: '25', fastestLap }),
-        buildResult({ driver: driver2, position: '2', grid: '2', points: '18' }),
-        // Race B
-        buildResult({ driver: driver1, position: '5', grid: '3', points: '10' }),
-        buildResult({ driver: driver2, position: '3', grid: '1', points: '15' }),
-        // Race C
-        buildResult({ driver: driver1, position: '2', grid: '4', points: '18' }),
-        buildResult({ driver: driver2, position: '4', grid: '5', points: '12' }),
+        // Round 1
+        buildResult({
+          driver: driver1,
+          season: '2021',
+          round: '1',
+          position: '1',
+          grid: '1',
+          points: '25',
+          fastestLap,
+        }),
+        buildResult({
+          driver: driver2,
+          season: '2021',
+          round: '1',
+          position: '2',
+          grid: '2',
+          points: '18',
+        }),
+        // Round 2
+        buildResult({
+          driver: driver1,
+          season: '2021',
+          round: '2',
+          position: '5',
+          grid: '3',
+          points: '10',
+        }),
+        buildResult({
+          driver: driver2,
+          season: '2021',
+          round: '2',
+          position: '3',
+          grid: '1',
+          points: '15',
+        }),
+        // Round 3
+        buildResult({
+          driver: driver1,
+          season: '2021',
+          round: '3',
+          position: '2',
+          grid: '4',
+          points: '18',
+        }),
+        buildResult({
+          driver: driver2,
+          season: '2021',
+          round: '3',
+          position: '4',
+          grid: '5',
+          points: '12',
+        }),
       ];
 
       // Act
@@ -221,17 +265,72 @@ describe('AnalyticsService', () => {
       expect(comparison.driver1Wins).toBe(2);
       expect(comparison.driver2Wins).toBe(1);
       expect(comparison.draws).toBe(0);
-      // Poles counted from grid === '1': driver1 has 1 (race A), driver2 has 1 (race B).
+      // Poles counted from grid === '1': driver1 has 1 (round 1), driver2 has 1 (round 2).
       expect(comparison.driver1PolePositions).toBe(1);
       expect(comparison.driver2PolePositions).toBe(1);
       // Fastest laps: only driver1 has one.
       expect(comparison.driver1FastestLaps).toBe(1);
       expect(comparison.driver2FastestLaps).toBe(0);
-      expect(comparison.competitionYears).toEqual([]);
+      // Seasons now derivable from the race identity on the shared results.
+      expect(comparison.competitionYears).toEqual(['2021']);
     });
 
-    it('should approximate racesMet as the min of each driver finish count', () => {
+    it('should only count races where BOTH drivers have a numeric finish', () => {
       // Arrange
+      const driver1 = buildDriver({ driverId: 'max_verstappen' });
+      const driver2 = buildDriver({ driverId: 'lewis_hamilton', familyName: 'Hamilton' });
+
+      // Round 1: both finish (VER wins). Round 2: HAM DNF (no numeric finish) =>
+      // that race is NOT counted. Round 3: both finish (HAM wins).
+      const seasonResults: RaceResult[] = [
+        buildResult({ driver: driver1, season: '2022', round: '1', position: '1' }),
+        buildResult({ driver: driver2, season: '2022', round: '1', position: '2' }),
+        buildResult({ driver: driver1, season: '2022', round: '2', position: '3' }),
+        buildResult({
+          driver: driver2,
+          season: '2022',
+          round: '2',
+          position: '',
+          positionText: 'R',
+        }),
+        buildResult({ driver: driver1, season: '2022', round: '3', position: '4' }),
+        buildResult({ driver: driver2, season: '2022', round: '3', position: '2' }),
+      ];
+
+      // Act
+      const comparison = service.compareDrivers(driver1, driver2, seasonResults);
+
+      // Assert - only rounds 1 and 3 count.
+      expect(comparison.racesMet).toBe(2);
+      expect(comparison.driver1Wins).toBe(1);
+      expect(comparison.driver2Wins).toBe(1);
+      expect(comparison.competitionYears).toEqual(['2022']);
+    });
+
+    it('should span competitionYears across multiple seasons', () => {
+      // Arrange
+      const driver1 = buildDriver({ driverId: 'max_verstappen' });
+      const driver2 = buildDriver({ driverId: 'lewis_hamilton', familyName: 'Hamilton' });
+
+      const seasonResults: RaceResult[] = [
+        buildResult({ driver: driver1, season: '2021', round: '1', position: '1' }),
+        buildResult({ driver: driver2, season: '2021', round: '1', position: '2' }),
+        buildResult({ driver: driver1, season: '2022', round: '1', position: '2' }),
+        buildResult({ driver: driver2, season: '2022', round: '1', position: '1' }),
+      ];
+
+      // Act
+      const comparison = service.compareDrivers(driver1, driver2, seasonResults);
+
+      // Assert
+      expect(comparison.racesMet).toBe(2);
+      expect(comparison.driver1Wins).toBe(1);
+      expect(comparison.driver2Wins).toBe(1);
+      expect(comparison.competitionYears).toEqual(['2021', '2022']);
+    });
+
+    it('should fall back to index-pairing when results carry no round identity', () => {
+      // Arrange - no season/round on any result => legacy fallback path.
       const driver1 = buildDriver({ driverId: 'max_verstappen' });
       const driver2 = buildDriver({ driverId: 'lewis_hamilton', familyName: 'Hamilton' });
       const seasonResults: RaceResult[] = [
@@ -250,6 +349,8 @@ describe('AnalyticsService', () => {
       // Sorted pairing: driver1 best [1], driver2 best [2] => driver1 wins.
       expect(comparison.driver1Wins).toBe(1);
       expect(comparison.driver2Wins).toBe(0);
+      // No season identity => competitionYears empty in the fallback path.
+      expect(comparison.competitionYears).toEqual([]);
     });
   });
 
