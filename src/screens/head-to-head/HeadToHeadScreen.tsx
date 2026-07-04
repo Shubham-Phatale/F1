@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text, Chip } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { setHeadToHeadComparisons } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
+import { ergastService } from '@/services/ergastAPI';
 import HeadToHeadCard from '@/components/analytics/HeadToHeadCard';
 
 interface HeadToHeadScreenProps {
@@ -24,13 +25,15 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
 
   // Source data from Redux state
   const { drivers } = useAppSelector(state => state.drivers);
-  const { driverStandings } = useAppSelector(state => state.standings);
-  const { results } = useAppSelector(state => state.results);
   const { headToHeadComparisons } = useAppSelector(state => state.analytics);
+  const currentSeason = useAppSelector(state => state.races.selectedSeason);
 
   // Local state for the two selected driver IDs
   const [driver1Id, setDriver1Id] = useState<string | null>(initialDriver1Id);
   const [driver2Id, setDriver2Id] = useState<string | null>(initialDriver2Id);
+
+  // Local loading state for the heavier season-results fetch.
+  const [loading, setLoading] = useState(false);
 
   // Resolve the selected driver objects
   const driver1 = useMemo(
@@ -50,16 +53,29 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
       return;
     }
 
-    // Ensure fresh stats for the current standings/results.
-    analyticsService.clearCache();
+    let mounted = true;
+    setLoading(true);
 
-    // Head-to-head is computed over the shared race results. The next task
-    // feeds a full aggregated season's results here; for now we use whatever
-    // results are currently loaded in state.
-    const comparison = analyticsService.compareDrivers(driver1, driver2, results);
+    const load = async () => {
+      try {
+        // Head-to-head is computed over a full aggregated season's results
+        // (cached per-season by the service).
+        const seasonResults = await ergastService.getSeasonResults(currentSeason);
+        const comparison = analyticsService.compareDrivers(driver1, driver2, seasonResults);
+        if (mounted) dispatch(setHeadToHeadComparisons([comparison]));
+      } catch {
+        if (mounted) dispatch(setHeadToHeadComparisons([]));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-    dispatch(setHeadToHeadComparisons([comparison]));
-  }, [driver1, driver2, results, dispatch]);
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [driver1, driver2, currentSeason, dispatch]);
 
   // Pull the computed comparison back out of state for rendering
   const comparison = useMemo(() => {
@@ -145,8 +161,15 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
         </View>
       )}
 
+      {/* Loading indicator */}
+      {bothSelected && loading && (
+        <View style={styles.emptyStateContainer}>
+          <ActivityIndicator />
+        </View>
+      )}
+
       {/* Comparison result */}
-      {bothSelected && comparison && <HeadToHeadCard comparison={comparison} />}
+      {bothSelected && !loading && comparison && <HeadToHeadCard comparison={comparison} />}
 
       {/* Footer spacer */}
       <View style={styles.footer} />

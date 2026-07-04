@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { Text, Divider, SegmentedButtons } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { setTrends, setSelectedDriverId } from '@/redux/slices/analyticsSlice';
+import { setSelectedDriverId } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
+import { ergastService } from '@/services/ergastAPI';
 import { TrendData } from '@/types';
 import TrendChart from '@/components/analytics/TrendChart';
+import SkeletonLoader from '@/components/common/SkeletonLoader';
+
+type SeasonStanding = { season: string; points: number; position: number; wins: number };
 
 type TrendMetric = TrendData['metricType'];
 
@@ -36,35 +40,47 @@ const TrendAnalysisScreen: React.FC<TrendAnalysisScreenProps> = ({ route }) => {
 
   // Source data from Redux state
   const { drivers } = useAppSelector(state => state.drivers);
-  const { driverStandings } = useAppSelector(state => state.standings);
-  const { trends } = useAppSelector(state => state.analytics);
+  const currentSeason = useAppSelector(state => state.races.selectedSeason);
+
+  // Fetched multi-season standings + local loading state.
+  const [seasonStandings, setSeasonStandings] = useState<SeasonStanding[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Find the driver object for this screen
   const driver = drivers.find(d => d.driverId === driverId);
 
-  // Compute trend data and store it in the analytics slice
+  // Fetch the driver's multi-season standings once. Metric changes reuse this
+  // fetched data (no refetch needed).
   useEffect(() => {
+    let mounted = true;
     dispatch(setSelectedDriverId(driverId));
+    setLoading(true);
 
-    if (!driver) {
-      return;
-    }
+    const load = async () => {
+      try {
+        const n = Number(currentSeason);
+        const window = [String(n - 2), String(n - 1), String(n)];
+        const standings = await ergastService.getDriverSeasonStandings(driverId, window);
+        if (mounted) setSeasonStandings(standings);
+      } catch {
+        if (mounted) setSeasonStandings([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-    // Trend data across seasons. The next task feeds aggregated multi-season
-    // standings (from ergastAPI.getDriverSeasonStandings) here; until then we
-    // pass an empty series so the trend renders gracefully.
-    const trend = analyticsService.getTrendData(driverId, [], 'points');
-    dispatch(setTrends([trend]));
-  }, [driverId, driver, driverStandings, dispatch]);
+    load();
 
-  // Pull the computed trend back out of state for rendering
-  const trend = trends.find(t => t.driverId === driverId);
+    return () => {
+      mounted = false;
+    };
+  }, [driverId, currentSeason, dispatch]);
 
-  // Align the stored trend with the currently selected metric so the chart
-  // labels and axis reflect the switcher choice.
-  const activeTrend: TrendData | undefined = trend
-    ? { ...trend, metricType: selectedMetric }
-    : undefined;
+  // Recompute the trend from the fetched standings whenever the metric changes.
+  const activeTrend: TrendData | undefined = useMemo(
+    () => analyticsService.getTrendData(driverId, seasonStandings, selectedMetric),
+    [driverId, seasonStandings, selectedMetric]
+  );
 
   const hasTrendData =
     !!activeTrend && activeTrend.seasons.length > 0 && activeTrend.values.length > 0;
@@ -106,7 +122,9 @@ const TrendAnalysisScreen: React.FC<TrendAnalysisScreenProps> = ({ route }) => {
           />
 
           {/* Trend Chart */}
-          {hasTrendData && activeTrend ? (
+          {loading ? (
+            <SkeletonLoader height={300} count={1} />
+          ) : hasTrendData && activeTrend ? (
             <View style={styles.chartContainer}>
               <TrendChart trendData={activeTrend} metric={selectedMetric} height={300} />
             </View>

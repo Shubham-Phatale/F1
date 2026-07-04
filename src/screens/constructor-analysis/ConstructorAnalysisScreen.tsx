@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { Text, Divider } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { setConstructorStats, setLoading } from '@/redux/slices/analyticsSlice';
+import { setConstructorStats } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
+import { ergastService } from '@/services/ergastAPI';
 import ConstructorComparison from '@/components/analytics/ConstructorComparison';
 import SkeletonLoader from '@/components/common/SkeletonLoader';
 
@@ -22,33 +23,50 @@ const ConstructorAnalysisScreen: React.FC<ConstructorAnalysisScreenProps> = ({ r
   const { constructorId } = route.params;
 
   // Source data from Redux state. Constructors live inside constructor standings,
-  // while stats are computed from driver standings + race results.
+  // while stats are computed from driver standings + aggregated season results.
   const { constructorStandings, driverStandings } = useAppSelector(state => state.standings);
-  const { results } = useAppSelector(state => state.results);
-  const { constructorStats, loading } = useAppSelector(state => state.analytics);
+  const { constructorStats } = useAppSelector(state => state.analytics);
+  const currentSeason = useAppSelector(state => state.races.selectedSeason);
+
+  // Local loading state for the heavier season-results fetch.
+  const [loading, setLoading] = useState(false);
 
   // Find the constructor object from the constructor standings
   const constructor = constructorStandings.find(
     standing => standing.constructor.constructorId === constructorId
   )?.constructor;
 
-  // Compute constructor stats and store them in the analytics slice
+  // Fetch aggregated season results, compute constructor stats and store them.
   useEffect(() => {
     if (!constructor) {
       return;
     }
 
-    dispatch(setLoading(true));
+    let mounted = true;
+    setLoading(true);
 
-    const stats = analyticsService.calculateConstructorStats(
-      constructor,
-      driverStandings,
-      results
-    );
-    dispatch(setConstructorStats([stats]));
+    const load = async () => {
+      try {
+        const seasonResults = await ergastService.getSeasonResults(currentSeason);
+        const stats = analyticsService.calculateConstructorStats(
+          constructor,
+          driverStandings,
+          seasonResults
+        );
+        if (mounted) dispatch(setConstructorStats([stats]));
+      } catch {
+        if (mounted) dispatch(setConstructorStats([]));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-    dispatch(setLoading(false));
-  }, [constructorId, constructor, driverStandings, results, dispatch]);
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [constructorId, constructor, currentSeason, driverStandings, dispatch]);
 
   // Pull the computed value back out of state for rendering
   const stats = constructorStats.find(s => s.constructorId === constructorId);

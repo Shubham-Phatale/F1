@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { Text, Divider, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -9,9 +9,10 @@ import {
   setDriverStats,
   setTrends,
   setSelectedDriverId,
-  setLoading,
 } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
+import { ergastService } from '@/services/ergastAPI';
+import { Driver } from '@/types';
 import DriverDashboard from '@/components/analytics/DriverDashboard';
 import TrendChart from '@/components/analytics/TrendChart';
 import SkeletonLoader from '@/components/common/SkeletonLoader';
@@ -34,34 +35,74 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
   // Source data from Redux state
   const { drivers } = useAppSelector(state => state.drivers);
   const { driverStandings } = useAppSelector(state => state.standings);
-  const { results } = useAppSelector(state => state.results);
-  const { driverStats, trends, loading } = useAppSelector(state => state.analytics);
+  const { driverStats, trends } = useAppSelector(state => state.analytics);
+  const currentSeason = useAppSelector(state => state.races.selectedSeason);
 
-  // Find the driver object for this screen
-  const driver = drivers.find(d => d.driverId === driverId);
+  // Local loading state for this heavier async fetch.
+  const [loading, setLoading] = useState(false);
+  // Driver may come from Redux state or, failing that, from the season results.
+  const [resolvedDriver, setResolvedDriver] = useState<Driver | null>(
+    drivers.find(d => d.driverId === driverId) ?? null
+  );
 
-  // Compute stats + trend data and store them in the analytics slice
+  const driver = resolvedDriver;
+
+  // Fetch aggregated season results + multi-season standings, then compute
+  // stats + trend data and store them in the analytics slice.
   useEffect(() => {
+    let mounted = true;
     dispatch(setSelectedDriverId(driverId));
+    setLoading(true);
 
-    if (!driver) {
-      return;
-    }
+    const load = async () => {
+      try {
+        const n = Number(currentSeason);
+        const window = [String(n - 2), String(n - 1), String(n)];
 
-    dispatch(setLoading(true));
+        // All results for the current season (cached per-season by the service).
+        const seasonResults = await ergastService.getSeasonResults(currentSeason);
 
-    // Career stats derived from the loaded standings + race results.
-    const stats = analyticsService.calculateDriverStats(driver, driverStandings, results);
-    dispatch(setDriverStats([stats]));
+        // Resolve the driver: prefer Redux, fall back to the season results.
+        const fromState = drivers.find(d => d.driverId === driverId);
+        const fromResults = seasonResults.find(r => r.driver.driverId === driverId)?.driver;
+        const found = fromState ?? fromResults ?? null;
 
-    // Trend data across seasons. The next task feeds aggregated multi-season
-    // standings (from ergastAPI.getDriverSeasonStandings) here; until then we
-    // pass an empty series so the trend renders gracefully.
-    const trend = analyticsService.getTrendData(driverId, [], 'points');
-    dispatch(setTrends([trend]));
+        // Fresh stats for the current season's results.
+        analyticsService.clearCache();
 
-    dispatch(setLoading(false));
-  }, [driverId, driver, driverStandings, results, dispatch]);
+        if (found) {
+          const stats = analyticsService.calculateDriverStats(
+            found,
+            driverStandings,
+            seasonResults
+          );
+          if (mounted) dispatch(setDriverStats([stats]));
+        }
+
+        // Multi-season championship standings power the performance trend.
+        const seasonStandings = await ergastService.getDriverSeasonStandings(driverId, window);
+        const trend = analyticsService.getTrendData(driverId, seasonStandings, 'points');
+
+        if (mounted) {
+          setResolvedDriver(found);
+          dispatch(setTrends([trend]));
+        }
+      } catch {
+        if (mounted) {
+          dispatch(setDriverStats([]));
+          dispatch(setTrends([]));
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [driverId, currentSeason, drivers, driverStandings, dispatch]);
 
   // Pull the computed values back out of state for rendering
   const stats = driverStats.find(s => s.driverId === driverId);
