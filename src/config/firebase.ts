@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth, type Auth, type Persistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, type Firestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firebaseConfig } from './firebaseConfig';
 
@@ -29,6 +29,15 @@ try {
   auth = getAuth(app);
 }
 
-const db = getFirestore(app);
+// The default Firestore transport (WebChannel) hangs silently in React Native /
+// Expo Go. Forcing long-polling makes reads/writes work reliably on device.
+// `initializeFirestore` must run before any `getFirestore`; fall back if it was
+// already initialized (e.g. after a fast refresh).
+let db: Firestore;
+try {
+  db = initializeFirestore(app, { experimentalForceLongPolling: true });
+} catch {
+  db = getFirestore(app);
+}
 
 export { app, auth, db };

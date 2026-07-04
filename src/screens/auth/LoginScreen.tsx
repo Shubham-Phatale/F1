@@ -47,7 +47,14 @@ const LoginScreen: React.FC = () => {
     dispatch(setAuthStatus('loading'));
     try {
       const authUser = await firebaseService.login(values.email, values.password);
-      const profile = await firebaseService.getUserProfile(authUser.uid);
+      // Don't let a slow/failed profile read block sign-in — fall back to a
+      // minimal profile built from the auth user.
+      let profile: UserProfile | null = null;
+      try {
+        profile = await firebaseService.getUserProfile(authUser.uid);
+      } catch {
+        profile = null;
+      }
       const resolved: UserProfile =
         profile ?? {
           uid: authUser.uid,
@@ -56,6 +63,7 @@ const LoginScreen: React.FC = () => {
           joinedAt: new Date().toISOString(),
         };
       dispatch(setUser(resolved));
+      navigation.navigate('Home', { screen: 'Profile' });
     } catch (error) {
       dispatch(setAuthError(mapAuthError(error)));
     } finally {

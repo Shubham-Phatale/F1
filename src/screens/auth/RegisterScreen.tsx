@@ -49,7 +49,14 @@ const RegisterScreen: React.FC = () => {
         values.password,
         values.displayName ?? ''
       );
-      const profile = await firebaseService.getUserProfile(authUser.uid);
+      // Don't let a slow/failed profile read block registration — fall back to a
+      // minimal profile built from the auth user.
+      let profile: UserProfile | null = null;
+      try {
+        profile = await firebaseService.getUserProfile(authUser.uid);
+      } catch {
+        profile = null;
+      }
       const resolved: UserProfile =
         profile ?? {
           uid: authUser.uid,
@@ -58,6 +65,7 @@ const RegisterScreen: React.FC = () => {
           joinedAt: new Date().toISOString(),
         };
       dispatch(setUser(resolved));
+      navigation.navigate('Home', { screen: 'Profile' });
     } catch (error) {
       dispatch(setAuthError(mapAuthError(error)));
     } finally {
