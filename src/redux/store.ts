@@ -19,9 +19,12 @@ import analyticsReducer from './slices/analyticsSlice';
 import authReducer from './slices/authSlice';
 import usersReducer from './slices/usersSlice';
 
-// Redux Persist configuration
+// Redux Persist configuration.
+// `version` is bumped whenever the persisted data shape changes so stale cached
+// state (e.g. pre-normalization API data) is discarded instead of rehydrated.
 const persistConfig = {
-  key: 'root',
+  key: 'root-v2',
+  version: 2,
   storage: AsyncStorage,
   whitelist: ['races', 'standings', 'drivers'],
 };

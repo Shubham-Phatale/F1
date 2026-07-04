@@ -64,7 +64,9 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
               {formatDate(race.date)}
             </Text>
             <Text variant="bodySmall" style={styles.location}>
-              {race.circuit.location.locality}, {race.circuit.location.country}
+              {race.circuit?.location
+                ? `${race.circuit.location.locality}, ${race.circuit.location.country}`
+                : 'Location TBD'}
             </Text>
           </View>
           <Divider />

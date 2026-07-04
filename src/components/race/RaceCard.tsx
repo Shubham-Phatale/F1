@@ -35,7 +35,7 @@ const RaceCard: React.FC<RaceCardProps> = ({ race, onPress }) => {
                 Circuit
               </Text>
               <Text variant="bodyMedium" style={styles.value}>
-                {race.circuit.circuitName}
+                {race.circuit?.circuitName ?? 'TBD'}
               </Text>
             </View>
           </View>
@@ -47,7 +47,9 @@ const RaceCard: React.FC<RaceCardProps> = ({ race, onPress }) => {
                 Location
               </Text>
               <Text variant="bodyMedium" style={styles.value}>
-                {race.circuit.location.locality}, {race.circuit.location.country}
+                {race.circuit?.location
+                  ? `${race.circuit.location.locality}, ${race.circuit.location.country}`
+                  : 'Location TBD'}
               </Text>
             </View>
 
