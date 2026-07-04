@@ -1,34 +1,34 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import RaceCard from '@/components/race/RaceCard';
 import { Race } from '@/types';
 
 // Mock react-native-paper components
-jest.mock('react-native-paper', () => ({
-  Card: ({
+jest.mock('react-native-paper', () => {
+  const { View, Text: RNText } = require('react-native');
+  const Card = ({
     children,
-    style,
   }: {
     children: React.ReactNode;
     style?: any;
-  }) => <>{children}</>,
-  'Card.Content': ({
+  }) => <View>{children}</View>;
+  Card.Content = ({
     children,
-    style,
   }: {
     children: React.ReactNode;
     style?: any;
-  }) => <>{children}</>,
-  Text: ({
-    children,
-    variant,
-    style,
-  }: {
-    children: React.ReactNode;
-    variant?: string;
-    style?: any;
-  }) => <>{children}</>,
-}));
+  }) => <View>{children}</View>;
+  return {
+    Card,
+    Text: ({
+      children,
+    }: {
+      children: React.ReactNode;
+      variant?: string;
+      style?: any;
+    }) => <RNText>{children}</RNText>,
+  };
+});
 
 // Mock formatters
 jest.mock('@/utils/formatters', () => ({
@@ -81,65 +81,72 @@ const mockRace: Race = {
 };
 
 describe('RaceCard', () => {
-  it('renders race card with race name', () => {
-    const { getByText } = render(<RaceCard race={mockRace} />);
+  it('renders race card with race name', async () => {
+    await render(<RaceCard race={mockRace} />);
 
-    expect(getByText('Bahrain GP')).toBeTruthy();
+    expect(screen.getByText('Bahrain GP')).toBeTruthy();
   });
 
-  it('displays circuit name', () => {
-    const { getByText } = render(<RaceCard race={mockRace} />);
+  it('displays circuit name', async () => {
+    await render(<RaceCard race={mockRace} />);
 
-    expect(getByText('Bahrain International Circuit')).toBeTruthy();
+    expect(screen.getByText('Bahrain International Circuit')).toBeTruthy();
   });
 
-  it('displays race location', () => {
-    const { getByText } = render(<RaceCard race={mockRace} />);
+  it('displays race location', async () => {
+    await render(<RaceCard race={mockRace} />);
 
-    expect(getByText('Bahrain, Bahrain')).toBeTruthy();
+    expect(screen.getByText('Bahrain, Bahrain')).toBeTruthy();
   });
 
-  it('displays formatted date', () => {
-    const { getByText } = render(<RaceCard race={mockRace} />);
+  it('displays formatted date', async () => {
+    await render(<RaceCard race={mockRace} />);
 
-    // formatDate will convert '2026-03-15' to 'Mar 15, 2026'
-    expect(getByText('Mar 15, 2026')).toBeTruthy();
+    // formatDate converts the ISO date into a localized "Mon D, YYYY" string.
+    // Compute the expected value the same way the mock does so the assertion
+    // is not sensitive to the test environment's timezone.
+    const expectedDate = new Date(mockRace.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    expect(screen.getByText(expectedDate)).toBeTruthy();
   });
 
-  it('displays formatted time', () => {
-    const { getByText } = render(<RaceCard race={mockRace} />);
+  it('displays formatted time', async () => {
+    await render(<RaceCard race={mockRace} />);
 
     // formatTime will convert '13:00:00Z' to '13:00'
-    expect(getByText('13:00')).toBeTruthy();
+    expect(screen.getByText('13:00')).toBeTruthy();
   });
 
-  it('renders race card with optional onPress handler', () => {
+  it('renders race card with optional onPress handler', async () => {
     const onPress = jest.fn();
-    const { getByText } = render(<RaceCard race={mockRace} onPress={onPress} />);
+    await render(<RaceCard race={mockRace} onPress={onPress} />);
 
-    expect(getByText('Bahrain GP')).toBeTruthy();
+    expect(screen.getByText('Bahrain GP')).toBeTruthy();
   });
 
-  it('handles race with no time gracefully', () => {
+  it('handles race with no time gracefully', async () => {
     const raceWithoutTime: Race = {
       ...mockRace,
       time: undefined,
     };
 
-    const { getByText } = render(<RaceCard race={raceWithoutTime} />);
+    await render(<RaceCard race={raceWithoutTime} />);
 
-    expect(getByText('Bahrain GP')).toBeTruthy();
+    expect(screen.getByText('Bahrain GP')).toBeTruthy();
     // Should display the formatter's fallback '--:--'
-    expect(getByText('--:--')).toBeTruthy();
+    expect(screen.getByText('--:--')).toBeTruthy();
   });
 
-  it('displays race info blocks with labels', () => {
-    const { getByText } = render(<RaceCard race={mockRace} />);
+  it('displays race info blocks with labels', async () => {
+    await render(<RaceCard race={mockRace} />);
 
     // These labels should appear in the component
-    expect(getByText('Date')).toBeTruthy();
-    expect(getByText('Circuit')).toBeTruthy();
-    expect(getByText('Location')).toBeTruthy();
-    expect(getByText('Time')).toBeTruthy();
+    expect(screen.getByText('Date')).toBeTruthy();
+    expect(screen.getByText('Circuit')).toBeTruthy();
+    expect(screen.getByText('Location')).toBeTruthy();
+    expect(screen.getByText('Time')).toBeTruthy();
   });
 });
