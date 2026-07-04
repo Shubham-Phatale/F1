@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeTabParamList } from './types';
+import ProfileScreen from '@/screens/profile/ProfileScreen';
 
 // Placeholder imports - actual screens will be implemented in Tasks 12-15
 const HomeScreen = () => null;
@@ -29,6 +30,8 @@ export const HomeNavigator: React.FC = () => {
             iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Standings') {
             iconName = focused ? 'trophy' : 'trophy-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -59,6 +62,13 @@ export const HomeNavigator: React.FC = () => {
         component={StandingsScreen}
         options={{
           title: 'Standings',
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
         }}
       />
     </Tab.Navigator>

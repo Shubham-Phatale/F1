@@ -7,6 +7,8 @@ import DriverDetailScreen from '@/screens/driver-detail/DriverDetailScreen';
 import HeadToHeadScreen from '@/screens/head-to-head/HeadToHeadScreen';
 import TrendAnalysisScreen from '@/screens/trend-analysis/TrendAnalysisScreen';
 import ConstructorAnalysisScreen from '@/screens/constructor-analysis/ConstructorAnalysisScreen';
+import LoginScreen from '@/screens/auth/LoginScreen';
+import RegisterScreen from '@/screens/auth/RegisterScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,6 +57,22 @@ export const RootNavigator: React.FC = () => {
           options={{
             headerShown: true,
             title: 'Constructor Stats',
+          }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{
+            headerShown: true,
+            title: 'Log In',
+          }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{
+            headerShown: true,
+            title: 'Sign Up',
           }}
         />
       </Stack.Navigator>
