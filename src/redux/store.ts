@@ -15,6 +15,7 @@ import standingsReducer from './slices/standingsSlice';
 import driversReducer from './slices/driversSlice';
 import resultsReducer from './slices/resultsSlice';
 import uiReducer from './slices/uiSlice';
+import analyticsReducer from './slices/analyticsSlice';
 
 // Redux Persist configuration
 const persistConfig = {
@@ -30,6 +31,7 @@ const rootReducer = combineReducers({
   results: resultsReducer,
   drivers: driversReducer,
   ui: uiReducer,
+  analytics: analyticsReducer,
 });
 
 // Apply persist to root reducer
