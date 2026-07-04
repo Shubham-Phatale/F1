@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { Text, SegmentedButtons } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/types';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchStandings } from '@/redux/slices/standingsSlice';
 import DriverRow from '@/components/race/DriverRow';
@@ -9,8 +12,11 @@ import SkeletonLoader from '@/components/common/SkeletonLoader';
 
 type StandingsType = 'drivers' | 'constructors';
 
+type StandingsNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const StandingsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<StandingsNavigationProp>();
 
   // Local state for standings type
   const [standingsType, setStandingsType] = useState<StandingsType>('drivers');
@@ -60,7 +66,16 @@ const StandingsScreen: React.FC = () => {
         <View>
           {driverStandings.length > 0 ? (
             driverStandings.map((standing, index) => (
-              <DriverRow key={standing.driver.driverId} standing={standing} index={index} />
+              <DriverRow
+                key={standing.driver.driverId}
+                standing={standing}
+                index={index}
+                onPress={() =>
+                  navigation.navigate('DriverDetail', {
+                    driverId: standing.driver.driverId,
+                  })
+                }
+              />
             ))
           ) : (
             <View style={styles.emptyStateContainer}>
@@ -79,6 +94,11 @@ const StandingsScreen: React.FC = () => {
                 key={standing.constructor.constructorId}
                 standing={standing}
                 index={index}
+                onPress={() =>
+                  navigation.navigate('ConstructorAnalysis', {
+                    constructorId: standing.constructor.constructorId,
+                  })
+                }
               />
             ))
           ) : (

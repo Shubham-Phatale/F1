@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Text, Divider } from 'react-native-paper';
 import { ConstructorStanding } from '../../types';
 import { formatPosition, formatPoints } from '../../utils/formatters';
@@ -7,12 +7,13 @@ import { formatPosition, formatPoints } from '../../utils/formatters';
 interface ConstructorRowProps {
   standing: ConstructorStanding;
   index: number;
+  onPress?: () => void;
 }
 
-const ConstructorRow: React.FC<ConstructorRowProps> = ({ standing, index }) => {
+const ConstructorRow: React.FC<ConstructorRowProps> = ({ standing, index, onPress }) => {
   return (
     <>
-      <View style={styles.row}>
+      <Pressable style={styles.row} onPress={onPress} disabled={!onPress}>
         {/* Position */}
         <View style={styles.positionContainer}>
           <Text variant="bodyMedium" style={styles.position}>
@@ -49,7 +50,7 @@ const ConstructorRow: React.FC<ConstructorRowProps> = ({ standing, index }) => {
             </Text>
           </View>
         </View>
-      </View>
+      </Pressable>
 
       {/* Divider - only if not the last item (max 10 constructors) */}
       {index < 9 && <Divider />}

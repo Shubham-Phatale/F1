@@ -15,4 +15,8 @@ export type HomeTabParamList = {
 // Root Stack Navigator Param List
 export type RootStackParamList = {
   Home: NavigatorScreenParams<HomeTabParamList>;
+  DriverDetail: { driverId: string };
+  HeadToHead: { driver1Id?: string; driver2Id?: string };
+  TrendAnalysis: { driverId: string };
+  ConstructorAnalysis: { constructorId: string };
 };
