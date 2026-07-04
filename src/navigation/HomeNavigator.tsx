@@ -2,12 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeTabParamList } from './types';
+import HomeScreen from '@/screens/home/HomeScreen';
+import CalendarScreen from '@/screens/calendar/CalendarScreen';
+import StandingsScreen from '@/screens/standings/StandingsScreen';
 import ProfileScreen from '@/screens/profile/ProfileScreen';
-
-// Placeholder imports - actual screens will be implemented in Tasks 12-15
-const HomeScreen = () => null;
-const CalendarScreen = () => null;
-const StandingsScreen = () => null;
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
