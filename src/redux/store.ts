@@ -1,45 +1,11 @@
 import { configureStore, PreloadedState } from '@reduxjs/toolkit';
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { RacesState, StandingsState, ResultsState, DriversState, UIState } from '../types';
-
-// Temporary placeholder reducers (will be replaced with actual slices in Task 5)
-const racesReducer = (state: RacesState = {
-  allRaces: [],
-  selectedSeason: '',
-  loading: false,
-  error: null,
-}): RacesState => state;
-
-const standingsReducer = (state: StandingsState = {
-  driverStandings: [],
-  constructorStandings: [],
-  season: '',
-  round: '',
-  loading: false,
-  error: null,
-}): StandingsState => state;
-
-const resultsReducer = (state: ResultsState = {
-  results: [],
-  qualifyingResults: [],
-  selectedRaceId: null,
-  loading: false,
-  error: null,
-}): ResultsState => state;
-
-const driversReducer = (state: DriversState = {
-  drivers: [],
-  loading: false,
-  error: null,
-}): DriversState => state;
-
-const uiReducer = (state: UIState = {
-  selectedRaceId: null,
-  selectedSeasonFilter: '',
-  selectedDriverFilter: null,
-  selectedConstructorFilter: null,
-}): UIState => state;
+import racesReducer from './slices/racesSlice';
+import standingsReducer from './slices/standingsSlice';
+import driversReducer from './slices/driversSlice';
+import resultsReducer from './slices/resultsSlice';
+import uiReducer from './slices/uiSlice';
 
 // Redux Persist configuration
 const persistConfig = {
@@ -49,13 +15,13 @@ const persistConfig = {
 };
 
 // Create root reducer
-const rootReducer = (state: any, action: any) => ({
-  races: racesReducer(state?.races, action),
-  standings: standingsReducer(state?.standings, action),
-  results: resultsReducer(state?.results, action),
-  drivers: driversReducer(state?.drivers, action),
-  ui: uiReducer(state?.ui, action),
-});
+const rootReducer = {
+  races: racesReducer,
+  standings: standingsReducer,
+  results: resultsReducer,
+  drivers: driversReducer,
+  ui: uiReducer,
+};
 
 // Apply persist to root reducer
 const persistedReducer = persistReducer(persistConfig, rootReducer);
