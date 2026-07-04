@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "F1 Portfolio",
+    "slug": "f1-portfolio",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.f1portfolio.app"
+    },
+    "android": {
+      "package": "com.f1portfolio.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
