@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PaperProvider } from 'react-native-paper';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import * as SplashScreen from 'expo-splash-screen';
@@ -60,13 +62,17 @@ const App: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <AuthGate>
-            <RootNavigator />
-          </AuthGate>
-        </PersistGate>
-      </Provider>
+      <SafeAreaProvider>
+        <PaperProvider>
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <AuthGate>
+                <RootNavigator />
+              </AuthGate>
+            </PersistGate>
+          </Provider>
+        </PaperProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 };
