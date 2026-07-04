@@ -1,13 +1,49 @@
+# Dependencies
 node_modules/
+
+# Expo
 .expo/
 .expo-shared/
 dist/
+web-build/
+
+# Native builds
 build/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Logs
 *.log
-.DS_Store
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Testing
+coverage/
+.jest/
+
+# Environment
 .env
 .env.local
 .env.*.local
-coverage/
-.jest/
-dist
+
+# macOS / editors
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# AI / assistant tooling (keep out of the repo)
+.claude/
+CLAUDE.md
+.superpowers/
+.cursor/
+.aider*
+.continue/
