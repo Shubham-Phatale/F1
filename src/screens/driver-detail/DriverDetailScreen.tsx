@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, Divider } from 'react-native-paper';
+import { Text, Divider, Button } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/types';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import {
   setDriverStats,
@@ -23,6 +26,7 @@ interface DriverDetailScreenProps {
 
 const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // Extract route params
   const { driverId } = route.params;
@@ -105,6 +109,18 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
         </View>
       )}
 
+      {/* Trend Analysis Entry Point */}
+      {driver && !loading && (
+        <View style={styles.actionContainer}>
+          <Button
+            mode="contained"
+            onPress={() => navigation.navigate('TrendAnalysis', { driverId })}
+          >
+            View Performance Trends
+          </Button>
+        </View>
+      )}
+
       {/* Footer spacer */}
       <View style={styles.footer} />
     </ScrollView>
@@ -134,6 +150,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  actionContainer: {
+    paddingHorizontal: 16,
+    marginTop: 16,
   },
   emptyStateContainer: {
     marginHorizontal: 16,

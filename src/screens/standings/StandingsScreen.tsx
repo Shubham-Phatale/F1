@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, SegmentedButtons } from 'react-native-paper';
+import { Text, SegmentedButtons, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -43,6 +43,13 @@ const StandingsScreen: React.FC = () => {
         <Text variant="headlineMedium" style={styles.title}>
           Standings
         </Text>
+        <Button
+          mode="outlined"
+          onPress={() => navigation.navigate('HeadToHead', {})}
+          style={styles.compareButton}
+        >
+          Compare Drivers
+        </Button>
       </View>
 
       {/* Tab Selector */}
@@ -127,6 +134,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
+  },
+  compareButton: {
+    marginTop: 12,
   },
   typeSelector: {
     paddingHorizontal: 16,
