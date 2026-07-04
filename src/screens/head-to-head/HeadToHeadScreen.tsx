@@ -53,18 +53,13 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
     // Ensure fresh stats for the current standings/results.
     analyticsService.clearCache();
 
-    const driver1Stats = analyticsService.calculateDriverStats(driver1, driverStandings, results);
-    const driver2Stats = analyticsService.calculateDriverStats(driver2, driverStandings, results);
-
-    const comparison = analyticsService.compareDrivers(
-      driver1Stats,
-      driver2Stats,
-      driver1,
-      driver2
-    );
+    // Head-to-head is computed over the shared race results. The next task
+    // feeds a full aggregated season's results here; for now we use whatever
+    // results are currently loaded in state.
+    const comparison = analyticsService.compareDrivers(driver1, driver2, results);
 
     dispatch(setHeadToHeadComparisons([comparison]));
-  }, [driver1, driver2, driverStandings, results, dispatch]);
+  }, [driver1, driver2, results, dispatch]);
 
   // Pull the computed comparison back out of state for rendering
   const comparison = useMemo(() => {

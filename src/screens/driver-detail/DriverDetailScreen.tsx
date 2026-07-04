@@ -54,8 +54,10 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
     const stats = analyticsService.calculateDriverStats(driver, driverStandings, results);
     dispatch(setDriverStats([stats]));
 
-    // Trend data across seasons (currently sourced from standings).
-    const trend = analyticsService.getTrendData(driverId, driverStandings);
+    // Trend data across seasons. The next task feeds aggregated multi-season
+    // standings (from ergastAPI.getDriverSeasonStandings) here; until then we
+    // pass an empty series so the trend renders gracefully.
+    const trend = analyticsService.getTrendData(driverId, [], 'points');
     dispatch(setTrends([trend]));
 
     dispatch(setLoading(false));

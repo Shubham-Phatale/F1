@@ -116,52 +116,145 @@ export class AnalyticsService {
   }
 
   /**
-   * Compare two drivers' performance metrics
-   * Returns head-to-head comparison including wins, poles, fastest laps
+   * Compare two drivers head-to-head over a shared set of season results.
+   *
+   * `seasonResults` is a full season's flattened `RaceResult[]` (from
+   * `ergastAPI.getSeasonResults`). Because `RaceResult` carries NO race/round
+   * identifier once flattened, we cannot reliably group results by race.
+   *
+   * Approach / limitation: we filter the shared set into each driver's own
+   * finishing results (numeric position only), sort each list by finishing
+   * position ascending, and pair them by index. `racesMet` is approximated as
+   * `min(count1, count2)`. For each paired race the driver with the lower
+   * finishing position wins that head-to-head; equal positions count as a draw
+   * (should not happen for real finishing positions but guarded anyway).
+   * Pole positions and fastest laps are counted directly from each driver's
+   * results across the whole shared set.
    */
   compareDrivers(
-    driver1Stats: DriverStats,
-    driver2Stats: DriverStats,
-    driver1Obj: Driver,
-    driver2Obj: Driver
+    driver1: Driver,
+    driver2: Driver,
+    seasonResults: RaceResult[]
   ): HeadToHeadComparison {
-    // For now, placeholder implementation using cached stats
-    // In a full implementation, this would analyze races where both drivers competed
+    const numericFinishes = (driverId: string): number[] =>
+      seasonResults
+        .filter(r => r.driver.driverId === driverId)
+        .map(r => parseInt(r.position, 10))
+        .filter(pos => Number.isFinite(pos) && pos > 0)
+        .sort((a, b) => a - b);
+
+    const countPoles = (driverId: string): number =>
+      seasonResults.filter(r => r.driver.driverId === driverId && r.grid === '1').length;
+
+    const countFastestLaps = (driverId: string): number =>
+      seasonResults.filter(
+        r => r.driver.driverId === driverId && r.fastestLap?.rank === '1'
+      ).length;
+
+    const d1Finishes = numericFinishes(driver1.driverId);
+    const d2Finishes = numericFinishes(driver2.driverId);
+
+    const racesMet = Math.min(d1Finishes.length, d2Finishes.length);
+
+    let driver1Wins = 0;
+    let driver2Wins = 0;
+    let draws = 0;
+    for (let i = 0; i < racesMet; i++) {
+      if (d1Finishes[i] < d2Finishes[i]) {
+        driver1Wins++;
+      } else if (d2Finishes[i] < d1Finishes[i]) {
+        driver2Wins++;
+      } else {
+        draws++;
+      }
+    }
+
     const comparison: HeadToHeadComparison = {
-      driver1Id: driver1Stats.driverId,
-      driver2Id: driver2Stats.driverId,
-      driver1: driver1Obj,
-      driver2: driver2Obj,
-      racesMet: 0, // Would be calculated from shared races
-      driver1Wins: driver1Stats.totalWins,
-      driver2Wins: driver2Stats.totalWins,
-      draws: 0,
-      driver1PolePositions: driver1Stats.polePositions,
-      driver2PolePositions: driver2Stats.polePositions,
-      driver1FastestLaps: driver1Stats.fastestLaps,
-      driver2FastestLaps: driver2Stats.fastestLaps,
-      competitionYears: [], // Would be populated from shared race seasons
+      driver1Id: driver1.driverId,
+      driver2Id: driver2.driverId,
+      driver1,
+      driver2,
+      racesMet,
+      driver1Wins,
+      driver2Wins,
+      draws,
+      driver1PolePositions: countPoles(driver1.driverId),
+      driver2PolePositions: countPoles(driver2.driverId),
+      driver1FastestLaps: countFastestLaps(driver1.driverId),
+      driver2FastestLaps: countFastestLaps(driver2.driverId),
+      // A flattened single-season RaceResult[] carries no season field, so the
+      // competing seasons are not derivable here.
+      competitionYears: [],
     };
 
     return comparison;
   }
 
   /**
-   * Get historical trend data for a driver across seasons
-   * Returns seasonal breakdown for visualization
+   * Build historical trend data for a driver from per-season standings.
+   *
+   * `seasonStandings` is the chronological array returned by
+   * `ergastAPI.getDriverSeasonStandings` (one entry per season with points,
+   * championship position and wins).
+   *
+   * Supported metrics from this data: 'points', 'wins' and 'position' (mapped
+   * onto the TrendData.metricType union). Metrics that are not present in the
+   * season standings ('podiums', 'poles', 'fastestLaps') cannot be derived here
+   * and yield an empty `values` array (documented degradation, not a crash).
+   *
+   * Trend is computed by comparing the first vs the last value. For most
+   * metrics a higher last value is 'improving'. For 'position' LOWER is better,
+   * so the comparison is inverted.
    */
-  getTrendData(driverId: string, standings: DriverStanding[]): TrendData {
-    // Placeholder implementation - would require season-by-season data
-    // In full implementation, would track metrics across multiple seasons
-    const trendData: TrendData = {
-      driverId,
-      metricType: 'points',
-      seasons: [],
-      values: [],
-      trend: 'stable',
-    };
+  getTrendData(
+    driverId: string,
+    seasonStandings: Array<{ season: string; points: number; position: number; wins: number }>,
+    metricType: TrendData['metricType']
+  ): TrendData {
+    const seasons = seasonStandings.map(entry => entry.season);
 
-    return trendData;
+    // Map the metricType union onto the fields available in season standings.
+    let values: number[];
+    let lowerIsBetter = false;
+    switch (metricType) {
+      case 'points':
+        values = seasonStandings.map(entry => entry.points);
+        break;
+      case 'wins':
+        values = seasonStandings.map(entry => entry.wins);
+        break;
+      // 'position' is not part of the current TrendData union but may be added;
+      // handle it defensively so callers can request championship position.
+      case 'position' as TrendData['metricType']:
+        values = seasonStandings.map(entry => entry.position);
+        lowerIsBetter = true;
+        break;
+      default:
+        // 'podiums' | 'poles' | 'fastestLaps' are not available in season
+        // standings, so we cannot build a series for them here.
+        values = [];
+        break;
+    }
+
+    let trend: TrendData['trend'] = 'stable';
+    if (values.length >= 2) {
+      const first = values[0];
+      const last = values[values.length - 1];
+      if (last === first) {
+        trend = 'stable';
+      } else {
+        const improved = lowerIsBetter ? last < first : last > first;
+        trend = improved ? 'improving' : 'declining';
+      }
+    }
+
+    return {
+      driverId,
+      metricType,
+      seasons: values.length > 0 ? seasons : [],
+      values,
+      trend,
+    };
   }
 
   /**

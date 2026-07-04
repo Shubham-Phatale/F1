@@ -176,7 +176,7 @@ describe('AnalyticsService', () => {
   });
 
   describe('compareDrivers', () => {
-    it('should build a head-to-head comparison from two driver stats', () => {
+    it('should compute a real head-to-head from shared season results', () => {
       // Arrange
       const driver1 = buildDriver({ driverId: 'max_verstappen', code: 'VER' });
       const driver2 = buildDriver({
@@ -186,31 +186,70 @@ describe('AnalyticsService', () => {
         familyName: 'Hamilton',
       });
 
-      const driver1Stats = service.calculateDriverStats(driver1, [], [
-        buildResult({ driver: driver1, position: '1', grid: '1', points: '25' }),
-      ]);
-      service.clearCache();
-      const driver2Stats = service.calculateDriverStats(driver2, [], [
+      const fastestLap = {
+        rank: '1',
+        lap: '44',
+        time: { time: '1:32.123' },
+        averageSpeed: { speed: '210.5', units: 'kph' },
+      };
+
+      // Three races. After sorting each driver's finishes ascending:
+      //   driver1 (VER): [1, 2, 5]
+      //   driver2 (HAM): [2, 3, 4]
+      // Paired by index: 1<2 (d1), 2<3 (d1), 5>4 (d2) => d1 wins 2, d2 wins 1.
+      const seasonResults: RaceResult[] = [
+        // Race A
+        buildResult({ driver: driver1, position: '1', grid: '1', points: '25', fastestLap }),
         buildResult({ driver: driver2, position: '2', grid: '2', points: '18' }),
-      ]);
+        // Race B
+        buildResult({ driver: driver1, position: '5', grid: '3', points: '10' }),
+        buildResult({ driver: driver2, position: '3', grid: '1', points: '15' }),
+        // Race C
+        buildResult({ driver: driver1, position: '2', grid: '4', points: '18' }),
+        buildResult({ driver: driver2, position: '4', grid: '5', points: '12' }),
+      ];
 
       // Act
-      const comparison = service.compareDrivers(driver1Stats, driver2Stats, driver1, driver2);
+      const comparison = service.compareDrivers(driver1, driver2, seasonResults);
 
       // Assert
       expect(comparison.driver1Id).toBe('max_verstappen');
       expect(comparison.driver2Id).toBe('lewis_hamilton');
       expect(comparison.driver1.familyName).toBe('Verstappen');
       expect(comparison.driver2.familyName).toBe('Hamilton');
-      expect(comparison.driver1Wins).toBe(driver1Stats.totalWins);
-      expect(comparison.driver2Wins).toBe(driver2Stats.totalWins);
-      expect(comparison.driver1PolePositions).toBe(driver1Stats.polePositions);
-      expect(comparison.driver2PolePositions).toBe(driver2Stats.polePositions);
-      expect(comparison.driver1FastestLaps).toBe(driver1Stats.fastestLaps);
-      expect(comparison.driver2FastestLaps).toBe(driver2Stats.fastestLaps);
-      expect(comparison.racesMet).toBe(0);
+      expect(comparison.racesMet).toBe(3);
+      expect(comparison.driver1Wins).toBe(2);
+      expect(comparison.driver2Wins).toBe(1);
       expect(comparison.draws).toBe(0);
+      // Poles counted from grid === '1': driver1 has 1 (race A), driver2 has 1 (race B).
+      expect(comparison.driver1PolePositions).toBe(1);
+      expect(comparison.driver2PolePositions).toBe(1);
+      // Fastest laps: only driver1 has one.
+      expect(comparison.driver1FastestLaps).toBe(1);
+      expect(comparison.driver2FastestLaps).toBe(0);
       expect(comparison.competitionYears).toEqual([]);
+    });
+
+    it('should approximate racesMet as the min of each driver finish count', () => {
+      // Arrange
+      const driver1 = buildDriver({ driverId: 'max_verstappen' });
+      const driver2 = buildDriver({ driverId: 'lewis_hamilton', familyName: 'Hamilton' });
+      const seasonResults: RaceResult[] = [
+        buildResult({ driver: driver1, position: '1', grid: '1' }),
+        buildResult({ driver: driver1, position: '3', grid: '2' }),
+        // driver2 only has one numeric finish plus a DNF (non-numeric position)
+        buildResult({ driver: driver2, position: '2', grid: '4' }),
+        buildResult({ driver: driver2, position: '', positionText: 'R', grid: '5' }),
+      ];
+
+      // Act
+      const comparison = service.compareDrivers(driver1, driver2, seasonResults);
+
+      // Assert
+      expect(comparison.racesMet).toBe(1); // min(2, 1)
+      // Sorted pairing: driver1 best [1], driver2 best [2] => driver1 wins.
+      expect(comparison.driver1Wins).toBe(1);
+      expect(comparison.driver2Wins).toBe(0);
     });
   });
 
@@ -289,13 +328,93 @@ describe('AnalyticsService', () => {
   });
 
   describe('getTrendData', () => {
-    it('should return trend data with the requested driver id and default shape', () => {
+    const seasonStandings = [
+      { season: '2021', points: 395, position: 2, wins: 10 },
+      { season: '2022', points: 454, position: 1, wins: 15 },
+      { season: '2023', points: 575, position: 1, wins: 19 },
+    ];
+
+    it('should build a points series and detect an improving trend', () => {
       // Act
-      const trend = service.getTrendData('max_verstappen', []);
+      const trend = service.getTrendData('max_verstappen', seasonStandings, 'points');
 
       // Assert
       expect(trend.driverId).toBe('max_verstappen');
       expect(trend.metricType).toBe('points');
+      expect(trend.seasons).toEqual(['2021', '2022', '2023']);
+      expect(trend.values).toEqual([395, 454, 575]);
+      // 575 > 395 => improving
+      expect(trend.trend).toBe('improving');
+    });
+
+    it('should build a wins series', () => {
+      // Act
+      const trend = service.getTrendData('max_verstappen', seasonStandings, 'wins');
+
+      // Assert
+      expect(trend.metricType).toBe('wins');
+      expect(trend.values).toEqual([10, 15, 19]);
+      expect(trend.trend).toBe('improving');
+    });
+
+    it('should invert the trend for the position metric (lower is better)', () => {
+      // Act - position metric is not part of the public union; cast to request it.
+      const trend = service.getTrendData(
+        'max_verstappen',
+        seasonStandings,
+        'position' as Parameters<typeof service.getTrendData>[2]
+      );
+
+      // Assert - position goes 2 -> 1 -> 1, lower is better, so improving.
+      expect(trend.values).toEqual([2, 1, 1]);
+      expect(trend.trend).toBe('improving');
+    });
+
+    it('should report a declining trend when points fall', () => {
+      // Arrange
+      const falling = [
+        { season: '2021', points: 400, position: 1, wins: 12 },
+        { season: '2022', points: 250, position: 3, wins: 5 },
+      ];
+
+      // Act
+      const trend = service.getTrendData('some_driver', falling, 'points');
+
+      // Assert
+      expect(trend.trend).toBe('declining');
+    });
+
+    it('should report stable when first and last values are equal', () => {
+      // Arrange
+      const flat = [
+        { season: '2021', points: 300, position: 2, wins: 8 },
+        { season: '2022', points: 300, position: 2, wins: 8 },
+      ];
+
+      // Act
+      const trend = service.getTrendData('some_driver', flat, 'wins');
+
+      // Assert
+      expect(trend.trend).toBe('stable');
+    });
+
+    it('should return an empty values series for unsupported metrics', () => {
+      // Act - podiums is not derivable from season standings.
+      const trend = service.getTrendData('max_verstappen', seasonStandings, 'podiums');
+
+      // Assert
+      expect(trend.metricType).toBe('podiums');
+      expect(trend.values).toEqual([]);
+      expect(trend.seasons).toEqual([]);
+      expect(trend.trend).toBe('stable');
+    });
+
+    it('should handle an empty standings array gracefully', () => {
+      // Act
+      const trend = service.getTrendData('max_verstappen', [], 'points');
+
+      // Assert
+      expect(trend.driverId).toBe('max_verstappen');
       expect(trend.seasons).toEqual([]);
       expect(trend.values).toEqual([]);
       expect(trend.trend).toBe('stable');
