@@ -6,7 +6,8 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { auth } from '@/config/firebase';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/config/firebase';
 
 /**
  * Minimal, consistent shape returned by every auth method. A formal
@@ -18,6 +19,22 @@ export interface AuthUser {
   uid: string;
   email: string;
   displayName: string;
+}
+
+/**
+ * Firestore-backed user profile document. Stored in the `users` collection with
+ * the auth `uid` as the document id. Task 4 will move this interface to
+ * `src/types` (keeping the same field names) and formalize it app-wide.
+ */
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  avatarUrl?: string;
+  bio?: string;
+  favoriteDriverId?: string;
+  favoriteConstructorId?: string;
+  joinedAt: string;
 }
 
 /**
@@ -51,13 +68,43 @@ export class FirebaseService {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName });
 
-    // Task 3 seam: await this.createUserProfile(userCredential.user.uid, { email, displayName });
+    const uid = userCredential.user.uid;
+    const resolvedEmail = userCredential.user.email ?? email;
+    await this.createUserProfile({
+      uid,
+      email: resolvedEmail,
+      displayName,
+      joinedAt: new Date().toISOString(),
+    });
 
     return {
-      uid: userCredential.user.uid,
-      email: userCredential.user.email ?? email,
+      uid,
+      email: resolvedEmail,
       displayName,
     };
+  }
+
+  /**
+   * Create the Firestore profile document for a user. Uses `setDoc` against the
+   * `users` collection with the user's `uid` as the document id.
+   */
+  async createUserProfile(profile: UserProfile): Promise<void> {
+    await setDoc(doc(db, 'users', profile.uid), profile);
+  }
+
+  /**
+   * Read a user's Firestore profile document, or null if it does not exist.
+   */
+  async getUserProfile(uid: string): Promise<UserProfile | null> {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data() as UserProfile) : null;
+  }
+
+  /**
+   * Apply a partial update to a user's Firestore profile document.
+   */
+  async updateUserProfile(uid: string, partial: Partial<UserProfile>): Promise<void> {
+    await updateDoc(doc(db, 'users', uid), partial);
   }
 
   /**

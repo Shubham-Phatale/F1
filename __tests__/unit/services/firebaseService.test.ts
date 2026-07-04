@@ -5,6 +5,7 @@ import {
   updateProfile,
   onAuthStateChanged,
 } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { FirebaseService } from '@/services/firebaseService';
 import { auth } from '@/config/firebase';
 
@@ -15,6 +16,15 @@ jest.mock('firebase/auth', () => ({
   signOut: jest.fn(),
   updateProfile: jest.fn(),
   onAuthStateChanged: jest.fn(),
+}));
+
+// Never hit the network: mock the modular firebase/firestore SDK entirely.
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(),
+  doc: jest.fn(),
+  setDoc: jest.fn(),
+  getDoc: jest.fn(),
+  updateDoc: jest.fn(),
 }));
 
 // Stub the config module so importing firebaseService does not initialize the
@@ -29,6 +39,10 @@ const mockedSignIn = signInWithEmailAndPassword as jest.Mock;
 const mockedSignOut = signOut as jest.Mock;
 const mockedUpdateProfile = updateProfile as jest.Mock;
 const mockedOnAuthStateChanged = onAuthStateChanged as jest.Mock;
+const mockedDoc = doc as jest.Mock;
+const mockedSetDoc = setDoc as jest.Mock;
+const mockedGetDoc = getDoc as jest.Mock;
+const mockedUpdateDoc = updateDoc as jest.Mock;
 
 describe('FirebaseService', () => {
   let service: FirebaseService;
@@ -44,11 +58,23 @@ describe('FirebaseService', () => {
       const fakeUser = { uid: 'abc123', email: 'new@user.com', displayName: null };
       mockedCreateUser.mockResolvedValueOnce({ user: fakeUser });
       mockedUpdateProfile.mockResolvedValueOnce(undefined);
+      mockedDoc.mockReturnValueOnce('users/abc123');
+      mockedSetDoc.mockResolvedValueOnce(undefined);
 
       const result = await service.signUp('new@user.com', 'password123', 'New User');
 
       expect(mockedCreateUser).toHaveBeenCalledWith(auth, 'new@user.com', 'password123');
       expect(mockedUpdateProfile).toHaveBeenCalledWith(fakeUser, { displayName: 'New User' });
+      // signUp now also creates the Firestore profile document.
+      expect(mockedSetDoc).toHaveBeenCalledWith(
+        'users/abc123',
+        expect.objectContaining({
+          uid: 'abc123',
+          email: 'new@user.com',
+          displayName: 'New User',
+          joinedAt: expect.any(String),
+        })
+      );
       expect(result).toEqual({
         uid: 'abc123',
         email: 'new@user.com',
@@ -158,6 +184,70 @@ describe('FirebaseService', () => {
 
       capturedListener(null);
       expect(cb).toHaveBeenCalledWith(null);
+    });
+  });
+
+  describe('createUserProfile', () => {
+    it('should call setDoc with the profile document', async () => {
+      const profile = {
+        uid: 'p-1',
+        email: 'p@one.com',
+        displayName: 'Profile One',
+        joinedAt: '2026-07-04T00:00:00.000Z',
+      };
+      mockedDoc.mockReturnValueOnce('users/p-1');
+      mockedSetDoc.mockResolvedValueOnce(undefined);
+
+      await service.createUserProfile(profile);
+
+      expect(mockedDoc).toHaveBeenCalledWith(expect.anything(), 'users', 'p-1');
+      expect(mockedSetDoc).toHaveBeenCalledWith('users/p-1', profile);
+    });
+  });
+
+  describe('getUserProfile', () => {
+    it('should return the profile data when the document exists', async () => {
+      const data = {
+        uid: 'p-2',
+        email: 'p@two.com',
+        displayName: 'Profile Two',
+        joinedAt: '2026-07-04T00:00:00.000Z',
+      };
+      mockedDoc.mockReturnValueOnce('users/p-2');
+      mockedGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => data,
+      });
+
+      const result = await service.getUserProfile('p-2');
+
+      expect(mockedDoc).toHaveBeenCalledWith(expect.anything(), 'users', 'p-2');
+      expect(result).toEqual(data);
+    });
+
+    it('should return null when the document does not exist', async () => {
+      mockedDoc.mockReturnValueOnce('users/missing');
+      mockedGetDoc.mockResolvedValueOnce({
+        exists: () => false,
+        data: () => undefined,
+      });
+
+      const result = await service.getUserProfile('missing');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('updateUserProfile', () => {
+    it('should call updateDoc with the partial update', async () => {
+      const partial = { bio: 'Updated bio', favoriteDriverId: 'max_verstappen' };
+      mockedDoc.mockReturnValueOnce('users/p-3');
+      mockedUpdateDoc.mockResolvedValueOnce(undefined);
+
+      await service.updateUserProfile('p-3', partial);
+
+      expect(mockedDoc).toHaveBeenCalledWith(expect.anything(), 'users', 'p-3');
+      expect(mockedUpdateDoc).toHaveBeenCalledWith('users/p-3', partial);
     });
   });
 });
