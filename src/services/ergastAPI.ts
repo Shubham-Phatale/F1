@@ -6,6 +6,10 @@ import {
   QualifyingResult,
   StandingsTable,
   Driver,
+  Constructor,
+  Circuit,
+  DriverStanding,
+  ConstructorStanding,
   ErgastResponse,
 } from '@/types';
 
@@ -103,8 +107,12 @@ export class ErgastService {
       return {
         season: driverList.season || constructorList.season || season,
         round: driverList.round || constructorList.round || round || '',
-        driverStandings: driverList.DriverStandings || [],
-        constructorStandings: constructorList.ConstructorStandings || [],
+        driverStandings: (driverList.DriverStandings || []).map((s: any) =>
+          this.normalizeDriverStanding(s)
+        ),
+        constructorStandings: (constructorList.ConstructorStandings || []).map((s: any) =>
+          this.normalizeConstructorStanding(s)
+        ),
       };
     } catch (error) {
       console.error(`Failed to get standings for ${season}/${round}:`, error);
@@ -119,7 +127,7 @@ export class ErgastService {
           `/${season}/${round}/results.json`
         );
         const results = response.data.MRData.RaceTable?.Races?.[0]?.Results || [];
-        return results as RaceResult[];
+        return results.map((r: any) => this.normalizeRaceResult(r));
       } catch (error) {
         console.error(`Failed to get results for ${season}/${round}:`, error);
         throw error;
@@ -178,11 +186,11 @@ export class ErgastService {
       }
 
       for (const race of races) {
-        const rawResults = (race.Results || []) as RaceResult[];
+        const rawResults = (race.Results || []) as any[];
         // Attach the parent race's identity onto each flattened result so that
         // downstream consumers (e.g. per-race head-to-head) can group by race.
         const enriched = rawResults.map(result => ({
-          ...result,
+          ...this.normalizeRaceResult(result),
           season: race.season,
           round: race.round,
           raceName: race.raceName,
@@ -231,10 +239,11 @@ export class ErgastService {
             const response = await this.api.get<ErgastResponse<any>>(
               `/${season}/driverStandings.json`
             );
-            const standings =
-              response.data.MRData.StandingsTable?.StandingsList?.[0]?.DriverStandings || [];
+            const standings = (
+              response.data.MRData.StandingsTable?.StandingsList?.[0]?.DriverStandings || []
+            ).map((s: any) => this.normalizeDriverStanding(s));
             const entry = standings.find(
-              (s: any) => s.driver?.driverId === driverId
+              (s: DriverStanding) => s.driver?.driverId === driverId
             );
             if (!entry) {
               return null;
@@ -276,7 +285,7 @@ export class ErgastService {
           `/${season}/${round}/qualifying.json`
         );
         const results = response.data.MRData.RaceTable?.Races?.[0]?.QualifyingResults || [];
-        return results as QualifyingResult[];
+        return results.map((r: any) => this.normalizeQualifyingResult(r));
       } catch (error) {
         console.error(`Failed to get qualifying for ${season}/${round}:`, error);
         throw error;
@@ -290,7 +299,7 @@ export class ErgastService {
         const response = await this.api.get<ErgastResponse<any>>(`/drivers/${driverId}.json`);
         const driver = response.data.MRData.DriverTable?.Drivers?.[0];
         if (!driver) throw new Error('Driver not found');
-        return driver as Driver;
+        return this.normalizeDriver(driver);
       } catch (error) {
         console.error(`Failed to get driver ${driverId}:`, error);
         throw error;
@@ -300,14 +309,138 @@ export class ErgastService {
 
   private transformRace(race: any): Race {
     return {
-      raceId: race.raceId,
+      raceId: race.raceId ?? `${race.season}-${race.round}`,
       season: race.season,
       round: race.round,
       raceName: race.raceName,
       date: race.date,
       time: race.time,
-      circuit: race.Circuit,
+      circuit: this.normalizeCircuit(race.Circuit),
       url: race.url,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Normalizers
+  //
+  // The jolpica Ergast mirror returns JSON with CAPITALIZED nested objects
+  // (Location, Driver, Constructor, Time, FastestLap, ...) and a few different
+  // field names (dateOfBirth vs dob). These normalizers convert the raw Ergast
+  // shape into the lowercase app types defined in src/types/index.ts. They are
+  // defensive (optional chaining + sensible defaults) so partial/missing data
+  // never crashes the data screens.
+  // ---------------------------------------------------------------------------
+
+  private normalizeDriver(raw: any): Driver {
+    return {
+      driverId: raw?.driverId ?? '',
+      code: raw?.code ?? '',
+      givenName: raw?.givenName ?? '',
+      familyName: raw?.familyName ?? '',
+      dob: raw?.dateOfBirth ?? raw?.dob ?? '',
+      nationality: raw?.nationality ?? '',
+      permanentNumber: raw?.permanentNumber ?? '',
+      url: raw?.url ?? '',
+    };
+  }
+
+  private normalizeConstructor(raw: any): Constructor {
+    return {
+      constructorId: raw?.constructorId ?? '',
+      name: raw?.name ?? '',
+      nationality: raw?.nationality ?? '',
+      url: raw?.url ?? '',
+    };
+  }
+
+  private normalizeCircuit(raw: any): Circuit {
+    const location = raw?.Location ?? raw?.location ?? {};
+    return {
+      circuitId: raw?.circuitId ?? '',
+      circuitName: raw?.circuitName ?? '',
+      location: {
+        lat: location?.lat ?? '',
+        long: location?.long ?? '',
+        locality: location?.locality ?? '',
+        country: location?.country ?? '',
+      },
+      url: raw?.url ?? '',
+    };
+  }
+
+  private normalizeRaceResult(raw: any): RaceResult {
+    const rawTime = raw?.Time ?? raw?.time;
+    const rawFastestLap = raw?.FastestLap ?? raw?.fastestLap;
+
+    const result: RaceResult = {
+      number: raw?.number ?? '',
+      position: raw?.position ?? '',
+      positionText: raw?.positionText ?? '',
+      points: raw?.points ?? '',
+      driver: this.normalizeDriver(raw?.Driver ?? raw?.driver),
+      constructor: this.normalizeConstructor(raw?.Constructor ?? raw?.constructor),
+      grid: raw?.grid ?? '',
+      laps: raw?.laps ?? '',
+      status: raw?.status ?? '',
+    };
+
+    if (rawTime) {
+      result.time = {
+        millis: rawTime?.millis ?? '',
+        time: rawTime?.time ?? '',
+      };
+    }
+
+    if (rawFastestLap) {
+      const flTime = rawFastestLap?.Time ?? rawFastestLap?.time;
+      const flSpeed = rawFastestLap?.AverageSpeed ?? rawFastestLap?.averageSpeed;
+      result.fastestLap = {
+        rank: rawFastestLap?.rank ?? '',
+        lap: rawFastestLap?.lap ?? '',
+        time: {
+          time: flTime?.time ?? '',
+        },
+        averageSpeed: {
+          speed: flSpeed?.speed ?? '',
+          units: flSpeed?.units ?? '',
+        },
+      };
+    }
+
+    return result;
+  }
+
+  private normalizeQualifyingResult(raw: any): QualifyingResult {
+    return {
+      number: raw?.number ?? '',
+      position: raw?.position ?? '',
+      driver: this.normalizeDriver(raw?.Driver ?? raw?.driver),
+      constructor: this.normalizeConstructor(raw?.Constructor ?? raw?.constructor),
+      q1: raw?.Q1 ?? raw?.q1,
+      q2: raw?.Q2 ?? raw?.q2,
+      q3: raw?.Q3 ?? raw?.q3,
+    };
+  }
+
+  private normalizeDriverStanding(raw: any): DriverStanding {
+    const rawConstructors = raw?.Constructors ?? raw?.constructors ?? [];
+    return {
+      position: raw?.position ?? '',
+      positionText: raw?.positionText ?? '',
+      points: raw?.points ?? '',
+      wins: raw?.wins ?? '',
+      driver: this.normalizeDriver(raw?.Driver ?? raw?.driver),
+      constructors: rawConstructors.map((c: any) => this.normalizeConstructor(c)),
+    };
+  }
+
+  private normalizeConstructorStanding(raw: any): ConstructorStanding {
+    return {
+      position: raw?.position ?? '',
+      positionText: raw?.positionText ?? '',
+      points: raw?.points ?? '',
+      wins: raw?.wins ?? '',
+      constructor: this.normalizeConstructor(raw?.Constructor ?? raw?.constructor),
     };
   }
 }

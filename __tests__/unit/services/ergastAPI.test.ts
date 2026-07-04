@@ -37,7 +37,6 @@ describe('ErgastService', () => {
               season: '2026',
               Races: [
                 {
-                  raceId: '1',
                   season: '2026',
                   round: '1',
                   raceName: 'Bahrain GP',
@@ -46,7 +45,7 @@ describe('ErgastService', () => {
                   Circuit: {
                     circuitId: 'bahrain',
                     circuitName: 'Bahrain International Circuit',
-                    location: {
+                    Location: {
                       lat: '26.0325',
                       long: '50.5106',
                       locality: 'Sakhir',
@@ -72,6 +71,11 @@ describe('ErgastService', () => {
       expect(races[0].raceName).toBe('Bahrain GP');
       expect(races[0].season).toBe('2026');
       expect(races[0].round).toBe('1');
+      // Ergast capitalizes Circuit.Location -> normalized to circuit.location.
+      expect(races[0].circuit.location.locality).toBe('Sakhir');
+      expect(races[0].circuit.location.country).toBe('Bahrain');
+      // Ergast races carry no raceId -> synthesized as `${season}-${round}`.
+      expect(races[0].raceId).toBe('2026-1');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/${year}.json`, {
         params: { limit: 100 },
       });
@@ -140,16 +144,23 @@ describe('ErgastService', () => {
                     positionText: '1',
                     points: '275',
                     wins: '4',
-                    driver: {
+                    Driver: {
                       driverId: 'max_verstappen',
                       code: 'VER',
                       givenName: 'Max',
                       familyName: 'Verstappen',
-                      dob: '1997-12-30',
+                      dateOfBirth: '1997-12-30',
                       nationality: 'Dutch',
                       url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
                     },
-                    constructors: [],
+                    Constructors: [
+                      {
+                        constructorId: 'red_bull',
+                        name: 'Red Bull Racing',
+                        nationality: 'Austrian',
+                        url: 'http://en.wikipedia.org/wiki/Red_Bull_Racing',
+                      },
+                    ],
                   },
                 ],
               },
@@ -175,7 +186,7 @@ describe('ErgastService', () => {
                     positionText: '1',
                     points: '400',
                     wins: '6',
-                    constructor: {
+                    Constructor: {
                       constructorId: 'red_bull',
                       name: 'Red Bull Racing',
                       nationality: 'Austrian',
@@ -207,8 +218,16 @@ describe('ErgastService', () => {
       expect(standings.season).toBe('2026');
       expect(standings.round).toBe('12');
       expect(standings.driverStandings).toHaveLength(1);
+      // Ergast capitalizes Driver -> normalized to lowercase driver.
+      expect(standings.driverStandings[0].driver.givenName).toBe('Max');
       expect(standings.driverStandings[0].driver.familyName).toBe('Verstappen');
+      // Ergast Driver.dateOfBirth -> app driver.dob.
+      expect(standings.driverStandings[0].driver.dob).toBe('1997-12-30');
+      // Ergast Constructors[] -> app constructors[].
+      expect(standings.driverStandings[0].constructors).toHaveLength(1);
+      expect(standings.driverStandings[0].constructors[0].name).toBe('Red Bull Racing');
       expect(standings.constructorStandings).toHaveLength(1);
+      // Ergast capitalizes Constructor -> normalized to lowercase constructor.
       expect(standings.constructorStandings[0].constructor.name).toBe('Red Bull Racing');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2026/driverStandings.json');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2026/constructorStandings.json');
@@ -351,16 +370,16 @@ describe('ErgastService', () => {
                       position: '1',
                       positionText: '1',
                       points: '25',
-                      driver: {
+                      Driver: {
                         driverId: 'max_verstappen',
                         code: 'VER',
                         givenName: 'Max',
                         familyName: 'Verstappen',
-                        dob: '1997-12-30',
+                        dateOfBirth: '1997-12-30',
                         nationality: 'Dutch',
                         url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
                       },
-                      constructor: {
+                      Constructor: {
                         constructorId: 'red_bull',
                         name: 'Red Bull Racing',
                         nationality: 'Austrian',
@@ -369,6 +388,13 @@ describe('ErgastService', () => {
                       grid: '1',
                       laps: '57',
                       status: 'Finished',
+                      Time: { millis: '5400000', time: '1:30:00.000' },
+                      FastestLap: {
+                        rank: '1',
+                        lap: '44',
+                        Time: { time: '1:32.608' },
+                        AverageSpeed: { units: 'kph', speed: '210.5' },
+                      },
                     },
                   ],
                 },
@@ -386,7 +412,17 @@ describe('ErgastService', () => {
       // Assert
       expect(results).toHaveLength(1);
       expect(results[0].position).toBe('1');
+      // Ergast capitalizes Driver/Constructor -> normalized to lowercase.
+      expect(results[0].driver.driverId).toBe('max_verstappen');
       expect(results[0].driver.familyName).toBe('Verstappen');
+      // Ergast Driver.dateOfBirth -> app driver.dob.
+      expect(results[0].driver.dob).toBe('1997-12-30');
+      expect(results[0].constructor.name).toBe('Red Bull Racing');
+      // Ergast Time/FastestLap -> app time/fastestLap (with nested Time/AverageSpeed).
+      expect(results[0].time?.time).toBe('1:30:00.000');
+      expect(results[0].fastestLap?.time.time).toBe('1:32.608');
+      expect(results[0].fastestLap?.averageSpeed.speed).toBe('210.5');
+      expect(results[0].fastestLap?.averageSpeed.units).toBe('kph');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/${season}/${round}/results.json`);
     });
 
@@ -433,24 +469,24 @@ describe('ErgastService', () => {
                     {
                       number: '1',
                       position: '1',
-                      driver: {
+                      Driver: {
                         driverId: 'max_verstappen',
                         code: 'VER',
                         givenName: 'Max',
                         familyName: 'Verstappen',
-                        dob: '1997-12-30',
+                        dateOfBirth: '1997-12-30',
                         nationality: 'Dutch',
                         url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
                       },
-                      constructor: {
+                      Constructor: {
                         constructorId: 'red_bull',
                         name: 'Red Bull Racing',
                         nationality: 'Austrian',
                         url: 'http://en.wikipedia.org/wiki/Red_Bull_Racing',
                       },
-                      q1: '1:32.123',
-                      q2: '1:31.456',
-                      q3: '1:30.789',
+                      Q1: '1:32.123',
+                      Q2: '1:31.456',
+                      Q3: '1:30.789',
                     },
                   ],
                 },
@@ -468,7 +504,14 @@ describe('ErgastService', () => {
       // Assert
       expect(results).toHaveLength(1);
       expect(results[0].position).toBe('1');
+      // Ergast Q1/Q2/Q3 -> app q1/q2/q3.
+      expect(results[0].q1).toBe('1:32.123');
+      expect(results[0].q2).toBe('1:31.456');
       expect(results[0].q3).toBe('1:30.789');
+      // Ergast Driver/Constructor -> lowercase driver/constructor.
+      expect(results[0].driver.familyName).toBe('Verstappen');
+      expect(results[0].driver.dob).toBe('1997-12-30');
+      expect(results[0].constructor.name).toBe('Red Bull Racing');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/${season}/${round}/qualifying.json`);
     });
   });
@@ -487,7 +530,7 @@ describe('ErgastService', () => {
                   code: 'VER',
                   givenName: 'Max',
                   familyName: 'Verstappen',
-                  dob: '1997-12-30',
+                  dateOfBirth: '1997-12-30',
                   nationality: 'Dutch',
                   permanentNumber: '1',
                   url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
@@ -507,6 +550,8 @@ describe('ErgastService', () => {
       expect(driver.familyName).toBe('Verstappen');
       expect(driver.code).toBe('VER');
       expect(driver.permanentNumber).toBe('1');
+      // Ergast Driver.dateOfBirth -> app driver.dob.
+      expect(driver.dob).toBe('1997-12-30');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/drivers/${driverId}.json`);
     });
 
@@ -589,16 +634,16 @@ describe('ErgastService', () => {
       position,
       positionText: position,
       points: '25',
-      driver: {
+      Driver: {
         driverId,
         code: 'XXX',
         givenName: 'Test',
         familyName: driverId,
-        dob: '1997-12-30',
+        dateOfBirth: '1997-12-30',
         nationality: 'Dutch',
         url: 'http://example.com',
       },
-      constructor: {
+      Constructor: {
         constructorId: 'red_bull',
         name: 'Red Bull Racing',
         nationality: 'Austrian',
@@ -714,16 +759,16 @@ describe('ErgastService', () => {
       positionText: position,
       points,
       wins,
-      driver: {
+      Driver: {
         driverId,
         code: 'XXX',
         givenName: 'Test',
         familyName: driverId,
-        dob: '1997-12-30',
+        dateOfBirth: '1997-12-30',
         nationality: 'Dutch',
         url: 'http://example.com',
       },
-      constructors: [],
+      Constructors: [],
     });
 
     const makeSeasonStandings = (season: string, driverStandings: any[]) => ({
