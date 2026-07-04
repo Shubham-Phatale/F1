@@ -250,7 +250,7 @@ describe('ErgastService', () => {
       const year = '2026';
       const networkError = new Error('Network error');
 
-      mockAxiosInstance.get.mockRejectedValueOnce(networkError);
+      mockAxiosInstance.get.mockRejectedValue(networkError);
 
       // Act & Assert
       await expect(service.getRacesByYear(year)).rejects.toThrow('Network error');
@@ -261,7 +261,7 @@ describe('ErgastService', () => {
       const season = '2026';
       const timeoutError = new Error('Request timeout');
 
-      mockAxiosInstance.get.mockRejectedValueOnce(timeoutError);
+      mockAxiosInstance.get.mockRejectedValue(timeoutError);
 
       // Act & Assert
       await expect(service.getStandings(season)).rejects.toThrow('Request timeout');
@@ -504,7 +504,7 @@ describe('ErgastService', () => {
         },
       };
 
-      mockAxiosInstance.get.mockResolvedValueOnce(mockNotFoundData);
+      mockAxiosInstance.get.mockResolvedValue(mockNotFoundData);
 
       // Act & Assert
       await expect(service.getDriver(driverId)).rejects.toThrow('Driver not found');
