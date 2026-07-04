@@ -12,6 +12,11 @@ import {
 export class ErgastService {
   private api: AxiosInstance;
 
+  // In-memory cache of fully-aggregated season results, keyed by season.
+  // Repeat calls for the same season are served from here to respect the
+  // free jolpica API's rate limits.
+  private seasonResultsCache: Map<string, RaceResult[]> = new Map();
+
   constructor() {
     this.api = axios.create({
       baseURL: ERGAST_API_BASE_URL,
@@ -112,6 +117,71 @@ export class ErgastService {
         throw error;
       }
     });
+  }
+
+  /**
+   * Aggregate every race result for a season by paginating the
+   * `/{season}/results.json` endpoint (paginated by result-row, 100 per page).
+   *
+   * Pagination: starts at offset 0 and increments by 100. The first page's
+   * `MRData.total` tells us how many rows exist in total, so we keep fetching
+   * until we have collected >= total rows (or a page returns no races). A hard
+   * cap of 20 pages guards against infinite loops.
+   *
+   * Caching: the fully-flattened result array is memoized per season in
+   * `seasonResultsCache`, so subsequent calls for the same season return the
+   * cached array without hitting the network.
+   */
+  async getSeasonResults(season: string): Promise<RaceResult[]> {
+    const cached = this.seasonResultsCache.get(season);
+    if (cached) {
+      return cached;
+    }
+
+    const PAGE_LIMIT = 100;
+    const MAX_PAGES = 20;
+
+    const allResults: RaceResult[] = [];
+    let offset = 0;
+    let total = Infinity;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const currentOffset = offset;
+      const response = await this.withRetry(async () => {
+        try {
+          return await this.api.get<ErgastResponse<any>>(`/${season}/results.json`, {
+            params: { limit: PAGE_LIMIT, offset: currentOffset },
+          });
+        } catch (error) {
+          console.error(
+            `Failed to get season results for ${season} (offset ${currentOffset}):`,
+            error
+          );
+          throw error;
+        }
+      });
+
+      const mrData = response.data.MRData;
+      total = parseInt(mrData?.total ?? '0', 10) || 0;
+
+      const races = mrData?.RaceTable?.Races || [];
+      if (races.length === 0) {
+        break;
+      }
+
+      for (const race of races) {
+        const results = (race.Results || []) as RaceResult[];
+        allResults.push(...results);
+      }
+
+      offset += PAGE_LIMIT;
+      if (offset >= total) {
+        break;
+      }
+    }
+
+    this.seasonResultsCache.set(season, allResults);
+    return allResults;
   }
 
   async getQualifying(season: string, round: string): Promise<QualifyingResult[]> {

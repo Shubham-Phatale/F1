@@ -583,6 +583,115 @@ describe('ErgastService', () => {
     });
   });
 
+  describe('getSeasonResults', () => {
+    const makeResult = (driverId: string, position: string) => ({
+      number: '1',
+      position,
+      positionText: position,
+      points: '25',
+      driver: {
+        driverId,
+        code: 'XXX',
+        givenName: 'Test',
+        familyName: driverId,
+        dob: '1997-12-30',
+        nationality: 'Dutch',
+        url: 'http://example.com',
+      },
+      constructor: {
+        constructorId: 'red_bull',
+        name: 'Red Bull Racing',
+        nationality: 'Austrian',
+        url: 'http://example.com',
+      },
+      grid: '1',
+      laps: '57',
+      status: 'Finished',
+    });
+
+    const makePage = (total: number, offset: number, races: any[]) => ({
+      data: {
+        MRData: {
+          total: String(total),
+          limit: '100',
+          offset: String(offset),
+          RaceTable: { season: '2024', Races: races },
+        },
+      },
+    });
+
+    it('should paginate and flatten all season results', async () => {
+      const season = '2024';
+      // total = 150 rows, so a second page (offset 100) is genuinely needed.
+      const page1 = makePage(150, 0, [
+        {
+          round: '1',
+          raceName: 'Bahrain GP',
+          Results: [makeResult('verstappen', '1'), makeResult('perez', '2')],
+        },
+      ]);
+      const page2 = makePage(150, 100, [
+        {
+          round: '2',
+          raceName: 'Saudi GP',
+          Results: [makeResult('leclerc', '1')],
+        },
+      ]);
+
+      mockAxiosInstance.get.mockImplementation((_path: string, config: any) => {
+        const offset = config?.params?.offset ?? 0;
+        return Promise.resolve(offset === 0 ? page1 : page2);
+      });
+
+      const results = await service.getSeasonResults(season);
+
+      expect(results).toHaveLength(3);
+      expect(results.map(r => r.driver.driverId)).toEqual(['verstappen', 'perez', 'leclerc']);
+      // Two pages should have been fetched (offset 0 and offset 100).
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2024/results.json', {
+        params: { limit: 100, offset: 0 },
+      });
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/2024/results.json', {
+        params: { limit: 100, offset: 100 },
+      });
+    });
+
+    it('should serve repeat calls from the in-memory cache', async () => {
+      const season = '2023';
+      const page1 = makePage(1, 0, [
+        {
+          round: '1',
+          raceName: 'Bahrain GP',
+          Results: [makeResult('verstappen', '1')],
+        },
+      ]);
+
+      mockAxiosInstance.get.mockResolvedValue(page1);
+
+      const first = await service.getSeasonResults(season);
+      const callsAfterFirst = mockAxiosInstance.get.mock.calls.length;
+
+      const second = await service.getSeasonResults(season);
+
+      expect(first).toHaveLength(1);
+      expect(second).toBe(first); // same cached array reference
+      // Second call must not trigger any additional axios GET calls.
+      expect(mockAxiosInstance.get.mock.calls.length).toBe(callsAfterFirst);
+    });
+
+    it('should stop when a page returns no races', async () => {
+      const season = '2022';
+      // total claims more rows, but the API returns an empty page early.
+      const emptyPage = makePage(500, 0, []);
+      mockAxiosInstance.get.mockResolvedValue(emptyPage);
+
+      const results = await service.getSeasonResults(season);
+
+      expect(results).toHaveLength(0);
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('axios configuration', () => {
     it('should create axios instance with correct configuration', () => {
       // Act
