@@ -19,4 +19,6 @@ export type RootStackParamList = {
   HeadToHead: { driver1Id?: string; driver2Id?: string };
   TrendAnalysis: { driverId: string };
   ConstructorAnalysis: { constructorId: string };
+  Login: undefined;
+  Register: undefined;
 };
