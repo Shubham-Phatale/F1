@@ -17,6 +17,14 @@ export class ErgastService {
   // free jolpica API's rate limits.
   private seasonResultsCache: Map<string, RaceResult[]> = new Map();
 
+  // In-memory cache of a driver's per-season standings, keyed by
+  // `driverId + '|' + seasons.join(',')`. Repeat calls for the same driver +
+  // season set are served from here to respect the free jolpica API's rate limits.
+  private driverSeasonStandingsCache: Map<
+    string,
+    Array<{ season: string; points: number; position: number; wins: number }>
+  > = new Map();
+
   constructor() {
     this.api = axios.create({
       baseURL: ERGAST_API_BASE_URL,
@@ -182,6 +190,75 @@ export class ErgastService {
 
     this.seasonResultsCache.set(season, allResults);
     return allResults;
+  }
+
+  /**
+   * Fetch a single driver's championship standing across multiple seasons, to
+   * power performance trend charts.
+   *
+   * For each requested season, `GET /{season}/driverStandings.json` is fetched
+   * (wrapped in `withRetry`) and the DriverStandings entry matching `driverId`
+   * is extracted. All seasons are fetched CONCURRENTLY via Promise.all.
+   *
+   * Seasons where the driver has no entry (didn't race / no data) are skipped
+   * rather than zero-filled. The returned array is sorted by season ascending.
+   *
+   * Caching: the resulting array is memoized per `driverId + '|' + seasons.join(',')`
+   * so repeat calls for the same driver + season set do not re-hit the network.
+   */
+  async getDriverSeasonStandings(
+    driverId: string,
+    seasons: string[]
+  ): Promise<Array<{ season: string; points: number; position: number; wins: number }>> {
+    const cacheKey = `${driverId}|${seasons.join(',')}`;
+    const cached = this.driverSeasonStandingsCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const perSeason = await Promise.all(
+      seasons.map(season =>
+        this.withRetry(async () => {
+          try {
+            const response = await this.api.get<ErgastResponse<any>>(
+              `/${season}/driverStandings.json`
+            );
+            const standings =
+              response.data.MRData.StandingsTable?.StandingsList?.[0]?.DriverStandings || [];
+            const entry = standings.find(
+              (s: any) => s.driver?.driverId === driverId
+            );
+            if (!entry) {
+              return null;
+            }
+            return {
+              season,
+              points: Number(entry.points),
+              position: Number(entry.position),
+              wins: Number(entry.wins),
+            };
+          } catch (error) {
+            console.error(
+              `Failed to get driver standings for ${driverId} in ${season}:`,
+              error
+            );
+            throw error;
+          }
+        })
+      )
+    );
+
+    const result = perSeason
+      .filter(
+        (
+          item
+        ): item is { season: string; points: number; position: number; wins: number } =>
+          item !== null
+      )
+      .sort((a, b) => a.season.localeCompare(b.season));
+
+    this.driverSeasonStandingsCache.set(cacheKey, result);
+    return result;
   }
 
   async getQualifying(season: string, round: string): Promise<QualifyingResult[]> {

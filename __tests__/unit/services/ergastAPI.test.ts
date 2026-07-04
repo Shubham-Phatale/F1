@@ -692,6 +692,141 @@ describe('ErgastService', () => {
     });
   });
 
+  describe('getDriverSeasonStandings', () => {
+    const makeDriverStanding = (
+      driverId: string,
+      points: string,
+      position: string,
+      wins: string
+    ) => ({
+      position,
+      positionText: position,
+      points,
+      wins,
+      driver: {
+        driverId,
+        code: 'XXX',
+        givenName: 'Test',
+        familyName: driverId,
+        dob: '1997-12-30',
+        nationality: 'Dutch',
+        url: 'http://example.com',
+      },
+      constructors: [],
+    });
+
+    const makeSeasonStandings = (season: string, driverStandings: any[]) => ({
+      data: {
+        MRData: {
+          StandingsTable: {
+            season,
+            StandingsList: [
+              {
+                season,
+                round: '22',
+                DriverStandings: driverStandings,
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    it('should return per-season points/position/wins in chronological order', async () => {
+      const driverId = 'verstappen';
+      const seasonMap: Record<string, any> = {
+        '2021': makeSeasonStandings('2021', [
+          makeDriverStanding('verstappen', '395.5', '1', '10'),
+          makeDriverStanding('hamilton', '387.5', '2', '8'),
+        ]),
+        '2022': makeSeasonStandings('2022', [
+          makeDriverStanding('verstappen', '454', '1', '15'),
+        ]),
+        '2023': makeSeasonStandings('2023', [
+          makeDriverStanding('verstappen', '575', '1', '19'),
+        ]),
+      };
+
+      mockAxiosInstance.get.mockImplementation((path: string) => {
+        const season = path.split('/')[1];
+        return Promise.resolve(seasonMap[season]);
+      });
+
+      // Pass seasons out of order to prove sorting.
+      const result = await service.getDriverSeasonStandings(driverId, [
+        '2023',
+        '2021',
+        '2022',
+      ]);
+
+      expect(result).toEqual([
+        { season: '2021', points: 395.5, position: 1, wins: 10 },
+        { season: '2022', points: 454, position: 1, wins: 15 },
+        { season: '2023', points: 575, position: 1, wins: 19 },
+      ]);
+    });
+
+    it('should skip seasons where the driver has no entry', async () => {
+      const driverId = 'verstappen';
+      const seasonMap: Record<string, any> = {
+        '2014': makeSeasonStandings('2014', [
+          makeDriverStanding('hamilton', '384', '1', '11'),
+        ]),
+        '2015': makeSeasonStandings('2015', [
+          makeDriverStanding('verstappen', '49', '12', '0'),
+        ]),
+        '2016': makeSeasonStandings('2016', [
+          makeDriverStanding('verstappen', '204', '5', '1'),
+        ]),
+      };
+
+      mockAxiosInstance.get.mockImplementation((path: string) => {
+        const season = path.split('/')[1];
+        return Promise.resolve(seasonMap[season]);
+      });
+
+      const result = await service.getDriverSeasonStandings(driverId, [
+        '2014',
+        '2015',
+        '2016',
+      ]);
+
+      // 2014 has no verstappen entry -> skipped, not zero-filled.
+      expect(result).toEqual([
+        { season: '2015', points: 49, position: 12, wins: 0 },
+        { season: '2016', points: 204, position: 5, wins: 1 },
+      ]);
+      expect(result.find(r => r.season === '2014')).toBeUndefined();
+    });
+
+    it('should serve repeat calls from the in-memory cache', async () => {
+      const driverId = 'verstappen';
+      const seasons = ['2022', '2023'];
+      const seasonMap: Record<string, any> = {
+        '2022': makeSeasonStandings('2022', [
+          makeDriverStanding('verstappen', '454', '1', '15'),
+        ]),
+        '2023': makeSeasonStandings('2023', [
+          makeDriverStanding('verstappen', '575', '1', '19'),
+        ]),
+      };
+
+      mockAxiosInstance.get.mockImplementation((path: string) => {
+        const season = path.split('/')[1];
+        return Promise.resolve(seasonMap[season]);
+      });
+
+      const first = await service.getDriverSeasonStandings(driverId, seasons);
+      const callsAfterFirst = mockAxiosInstance.get.mock.calls.length;
+
+      const second = await service.getDriverSeasonStandings(driverId, seasons);
+
+      expect(second).toBe(first); // same cached array reference
+      // Second call must not trigger any additional axios GET calls.
+      expect(mockAxiosInstance.get.mock.calls.length).toBe(callsAfterFirst);
+    });
+  });
+
   describe('axios configuration', () => {
     it('should create axios instance with correct configuration', () => {
       // Act
