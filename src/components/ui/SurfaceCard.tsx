@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { colors } from '@/theme';
+import { colors, SCREEN_GUTTER } from '@/theme';
 
 interface Props {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
-    marginHorizontal: 12,
+    marginHorizontal: SCREEN_GUTTER,
     marginBottom: 12,
   },
 });

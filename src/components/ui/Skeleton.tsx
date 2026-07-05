@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, useWindowDimensions } from 'react-native';
-import { colors } from '@/theme';
+import { colors, SCREEN_GUTTER } from '@/theme';
 
 interface Props {
   width?: number;
@@ -36,5 +36,5 @@ export const Skeleton: React.FC<Props> = ({ width, height = 80, count = 1, borde
 };
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: colors.surfaceRaised, marginHorizontal: 12, marginBottom: 12 },
+  box: { backgroundColor: colors.surfaceRaised, marginHorizontal: SCREEN_GUTTER, marginBottom: 12 },
 });
