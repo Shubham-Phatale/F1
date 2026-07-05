@@ -33,7 +33,7 @@ export const RootNavigator: React.FC = () => {
           name="DriverDetail"
           component={DriverDetailScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Driver Profile',
           }}
         />
@@ -41,7 +41,7 @@ export const RootNavigator: React.FC = () => {
           name="HeadToHead"
           component={HeadToHeadScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Head to Head',
           }}
         />
@@ -49,7 +49,7 @@ export const RootNavigator: React.FC = () => {
           name="TrendAnalysis"
           component={TrendAnalysisScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Performance Trends',
           }}
         />
@@ -57,7 +57,7 @@ export const RootNavigator: React.FC = () => {
           name="ConstructorAnalysis"
           component={ConstructorAnalysisScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Constructor Stats',
           }}
         />
@@ -65,7 +65,7 @@ export const RootNavigator: React.FC = () => {
           name="Login"
           component={LoginScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Log In',
           }}
         />
@@ -73,7 +73,7 @@ export const RootNavigator: React.FC = () => {
           name="Register"
           component={RegisterScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Sign Up',
           }}
         />
@@ -81,7 +81,7 @@ export const RootNavigator: React.FC = () => {
           name="About"
           component={AboutScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'About',
           }}
         />

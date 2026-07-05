@@ -10,7 +10,7 @@ import {
 import { formatDate } from '@/utils/formatters';
 import ResultsTable from '@/components/race/ResultsTable';
 import LapTimeTable from '@/components/race/LapTimeTable';
-import { ScreenContainer, SurfaceCard, Flag, Skeleton } from '@/components/ui';
+import { ScreenContainer, BackButton, SurfaceCard, Flag, Skeleton } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 type DisplayTab = 'results' | 'qualifying';
@@ -56,6 +56,7 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
 
   return (
     <ScreenContainer>
+      <BackButton />
       {/* Styled circuit banner */}
       {race && (
         <SurfaceCard accentColor={colors.accent} style={styles.banner}>

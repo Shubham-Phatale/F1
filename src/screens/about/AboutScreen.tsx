@@ -1,10 +1,11 @@
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
-import { ScreenContainer, SurfaceCard, SectionHeader, AttributionText } from '@/components/ui';
+import { ScreenContainer, BackButton, SurfaceCard, SectionHeader, AttributionText } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 const AboutScreen: React.FC = () => (
   <ScreenContainer>
+    <BackButton />
     <View style={styles.header}>
       <Text style={styles.title}>F1·LIVE</Text>
       <Text style={styles.subtitle}>Unofficial F1 stats companion</Text>

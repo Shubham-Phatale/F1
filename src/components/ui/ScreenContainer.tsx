@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme';
 
 interface Props {
@@ -8,18 +9,24 @@ interface Props {
 }
 
 export const ScreenContainer: React.FC<Props> = ({ children, scroll = true }) => {
+  const insets = useSafeAreaInsets();
+
   if (scroll) {
     return (
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
         showsVerticalScrollIndicator={false}
       >
         {children}
       </ScrollView>
     );
   }
-  return <View style={[styles.container, styles.content]}>{children}</View>;
+  return (
+    <View style={[styles.container, styles.content, { paddingTop: insets.top }]}>
+      {children}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({

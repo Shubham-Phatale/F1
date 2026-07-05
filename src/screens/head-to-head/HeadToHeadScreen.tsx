@@ -6,7 +6,7 @@ import { setHeadToHeadComparisons } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
 import HeadToHeadCard from '@/components/analytics/HeadToHeadCard';
-import { ScreenContainer } from '@/components/ui';
+import { ScreenContainer, BackButton } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 interface HeadToHeadScreenProps {
@@ -126,6 +126,7 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
 
   return (
     <ScreenContainer>
+      <BackButton />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Head to Head</Text>

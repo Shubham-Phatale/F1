@@ -7,7 +7,7 @@ import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
 import { TrendData } from '@/types';
 import TrendChart from '@/components/analytics/TrendChart';
-import { ScreenContainer, SurfaceCard, Skeleton } from '@/components/ui';
+import { ScreenContainer, BackButton, SurfaceCard, Skeleton } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 type SeasonStanding = { season: string; points: number; position: number; wins: number };
@@ -90,6 +90,7 @@ const TrendAnalysisScreen: React.FC<TrendAnalysisScreenProps> = ({ route }) => {
 
   return (
     <ScreenContainer>
+      <BackButton />
       {/* Header Section */}
       {driver && (
         <View style={styles.header}>

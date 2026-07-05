@@ -6,7 +6,7 @@ import { setConstructorStats } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
 import ConstructorComparison from '@/components/analytics/ConstructorComparison';
-import { ScreenContainer, Skeleton } from '@/components/ui';
+import { ScreenContainer, BackButton, Skeleton } from '@/components/ui';
 import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface ConstructorAnalysisScreenProps {
@@ -74,6 +74,7 @@ const ConstructorAnalysisScreen: React.FC<ConstructorAnalysisScreenProps> = ({ r
 
   return (
     <ScreenContainer>
+      <BackButton />
       {/* Header Section */}
       {constructor && (
         <View style={styles.header}>

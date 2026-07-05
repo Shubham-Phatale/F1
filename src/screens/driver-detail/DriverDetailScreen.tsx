@@ -18,6 +18,7 @@ import DriverDashboard from '@/components/analytics/DriverDashboard';
 import TrendChart from '@/components/analytics/TrendChart';
 import {
   ScreenContainer,
+  BackButton,
   SurfaceCard,
   SectionHeader,
   SmartImage,
@@ -142,6 +143,7 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
 
   return (
     <ScreenContainer>
+      <BackButton />
       {/* Photo Header */}
       {driver && (
         <View style={styles.header}>

@@ -9,7 +9,7 @@ import { setUser, setAuthStatus, setAuthError } from '@/redux/slices/authSlice';
 import { firebaseService } from '@/services/firebaseService';
 import type { UserProfile } from '@/types';
 import AuthForm, { AuthFormValues } from '@/components/auth/AuthForm';
-import { ScreenContainer } from '@/components/ui';
+import { ScreenContainer, BackButton } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -75,6 +75,7 @@ const LoginScreen: React.FC = () => {
 
   return (
     <ScreenContainer scroll>
+      <BackButton />
       <View style={styles.wordmarkWrap}>
         <Text style={styles.wordmark}>F1·LIVE</Text>
       </View>

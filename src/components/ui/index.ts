@@ -1,4 +1,5 @@
 export { ScreenContainer } from './ScreenContainer';
+export { BackButton } from './BackButton';
 export { SurfaceCard } from './SurfaceCard';
 export { SectionHeader } from './SectionHeader';
 export { AttributionText } from './AttributionText';
