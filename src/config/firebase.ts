@@ -11,7 +11,6 @@ import { firebaseConfig } from './firebaseConfig';
 declare module 'firebase/auth' {
   export function getReactNativePersistence(storage: unknown): Persistence;
 }
-// eslint-disable-next-line import/first
 import { getReactNativePersistence } from 'firebase/auth';
 
 // Initialize the Firebase app once (guard against re-init during fast refresh).
