@@ -12,7 +12,7 @@ import {
 } from '@/redux/slices/predictionsSlice';
 import { predictionService } from '@/services/predictionService';
 import { getRaceLockTime } from '@/utils/predictionRules';
-import { ScreenContainer, SurfaceCard, Skeleton, Flag } from '@/components/ui';
+import { ScreenContainer, SurfaceCard, Skeleton, Flag, Reveal } from '@/components/ui';
 import { PredictionCard } from '@/components/predict/PredictionCard';
 import { colors, fontFamily, SCREEN_GUTTER } from '@/theme';
 import type { Prediction, Race } from '@/types';
@@ -135,7 +135,7 @@ const PredictScreen: React.FC = () => {
             )}
 
             {/* Next race card */}
-            <View style={styles.section}>
+            <Reveal index={0} style={styles.section}>
               <Text style={styles.sectionLabel}>Next race</Text>
               {nextRace ? (
                 <SurfaceCard>
@@ -212,10 +212,10 @@ const PredictScreen: React.FC = () => {
                   </Text>
                 </SurfaceCard>
               )}
-            </View>
+            </Reveal>
 
             {/* Leaderboard button */}
-            <View style={styles.section}>
+            <Reveal index={1} style={styles.section}>
               <Button
                 mode="contained-tonal"
                 icon="trophy"
@@ -223,10 +223,10 @@ const PredictScreen: React.FC = () => {
               >
                 View Leaderboard
               </Button>
-            </View>
+            </Reveal>
 
             {/* Recent predictions */}
-            <View style={styles.section}>
+            <Reveal index={2} style={styles.section}>
               <Text style={styles.sectionLabel}>Recent predictions</Text>
               {scoredPredictions.length > 0 ? (
                 scoredPredictions.map(prediction => (
@@ -244,7 +244,7 @@ const PredictScreen: React.FC = () => {
                   </Text>
                 </SurfaceCard>
               )}
-            </View>
+            </Reveal>
           </>
         )}
     </ScreenContainer>

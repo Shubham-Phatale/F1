@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchStandings } from '@/redux/slices/standingsSlice';
 import DriverRow from '@/components/race/DriverRow';
 import ConstructorRow from '@/components/race/ConstructorRow';
-import { ScreenContainer, Skeleton } from '@/components/ui';
+import { ScreenContainer, Skeleton, Reveal } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 type StandingsType = 'drivers' | 'constructors';
@@ -74,16 +74,17 @@ const StandingsScreen: React.FC = () => {
         <View>
           {driverStandings.length > 0 ? (
             driverStandings.map((standing, index) => (
-              <DriverRow
-                key={standing.driver.driverId}
-                standing={standing}
-                index={index}
-                onPress={() =>
-                  navigation.navigate('DriverDetail', {
-                    driverId: standing.driver.driverId,
-                  })
-                }
-              />
+              <Reveal key={standing.driver.driverId} index={Math.min(index, 6)}>
+                <DriverRow
+                  standing={standing}
+                  index={index}
+                  onPress={() =>
+                    navigation.navigate('DriverDetail', {
+                      driverId: standing.driver.driverId,
+                    })
+                  }
+                />
+              </Reveal>
             ))
           ) : (
             <View style={styles.emptyStateContainer}>
@@ -98,16 +99,20 @@ const StandingsScreen: React.FC = () => {
         <View>
           {constructorStandings.length > 0 ? (
             constructorStandings.map((standing, index) => (
-              <ConstructorRow
+              <Reveal
                 key={standing.constructor.constructorId}
-                standing={standing}
-                index={index}
-                onPress={() =>
-                  navigation.navigate('ConstructorAnalysis', {
-                    constructorId: standing.constructor.constructorId,
-                  })
-                }
-              />
+                index={Math.min(index, 6)}
+              >
+                <ConstructorRow
+                  standing={standing}
+                  index={index}
+                  onPress={() =>
+                    navigation.navigate('ConstructorAnalysis', {
+                      constructorId: standing.constructor.constructorId,
+                    })
+                  }
+                />
+              </Reveal>
             ))
           ) : (
             <View style={styles.emptyStateContainer}>

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { ConstructorStanding } from '../../types';
 import { formatPoints } from '../../utils/formatters';
-import { PositionBadge, TeamColorBar } from '@/components/ui';
+import { PositionBadge, TeamColorBar, PressableScale } from '@/components/ui';
 import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface ConstructorRowProps {
@@ -17,7 +17,7 @@ const ConstructorRow: React.FC<ConstructorRowProps> = ({ standing, index, onPres
 
   return (
     <>
-      <Pressable style={styles.row} onPress={onPress} disabled={!onPress}>
+      <PressableScale style={styles.row} onPress={onPress} disabled={!onPress}>
         <PositionBadge position={standing.position} />
 
         <TeamColorBar color={teamColor} width={3} />
@@ -41,7 +41,7 @@ const ConstructorRow: React.FC<ConstructorRowProps> = ({ standing, index, onPres
             PTS
           </Text>
         </View>
-      </Pressable>
+      </PressableScale>
 
       {/* Divider - only if not the last item (max 10 constructors) */}
       {index < 9 && <View style={styles.divider} />}

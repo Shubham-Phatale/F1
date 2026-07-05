@@ -13,7 +13,7 @@ import { getRaceLockTime } from '@/utils/predictionRules';
 import { NextRaceCard } from '@/components/home/NextRaceCard';
 import { PodiumCard } from '@/components/home/PodiumCard';
 import { MiniStandings, MiniStandingRow } from '@/components/home/MiniStandings';
-import { ScreenContainer, SectionHeader, Skeleton } from '@/components/ui';
+import { ScreenContainer, SectionHeader, Skeleton, Reveal } from '@/components/ui';
 import { colors, fontFamily, getTeamColor } from '@/theme';
 import { formatPoints } from '@/utils/formatters';
 
@@ -150,45 +150,53 @@ const HomeScreen: React.FC = () => {
       )}
 
       {/* Up Next */}
-      <SectionHeader title="Up Next" />
-      {isLoading ? (
-        <Skeleton height={140} count={1} />
-      ) : nextRace ? (
-        <NextRaceCard race={nextRace} />
-      ) : (
-        <View style={styles.emptyStateContainer}>
-          <Text style={styles.emptyStateText}>No upcoming races</Text>
-        </View>
-      )}
+      <Reveal index={0}>
+        <SectionHeader title="Up Next" />
+        {isLoading ? (
+          <Skeleton height={140} count={1} />
+        ) : nextRace ? (
+          <NextRaceCard race={nextRace} />
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>No upcoming races</Text>
+          </View>
+        )}
+      </Reveal>
 
       {/* Last Race */}
-      <SectionHeader title="Last Race" />
-      {podiumLoading ? (
-        <Skeleton height={120} count={1} />
-      ) : podium.length > 0 && lastRace ? (
-        <PodiumCard
-          raceName={lastRace.raceName}
-          country={lastRace.circuit?.location?.country}
-          podium={podium}
-        />
-      ) : null}
+      <Reveal index={1}>
+        <SectionHeader title="Last Race" />
+        {podiumLoading ? (
+          <Skeleton height={120} count={1} />
+        ) : podium.length > 0 && lastRace ? (
+          <PodiumCard
+            raceName={lastRace.raceName}
+            country={lastRace.circuit?.location?.country}
+            podium={podium}
+          />
+        ) : null}
+      </Reveal>
 
       {/* Drivers Championship */}
       {driverRows.length > 0 && (
-        <MiniStandings
-          title="Drivers Championship"
-          rows={driverRows}
-          onViewAll={goToStandings}
-        />
+        <Reveal index={2}>
+          <MiniStandings
+            title="Drivers Championship"
+            rows={driverRows}
+            onViewAll={goToStandings}
+          />
+        </Reveal>
       )}
 
       {/* Constructors Championship */}
       {constructorRows.length > 0 && (
-        <MiniStandings
-          title="Constructors Championship"
-          rows={constructorRows}
-          onViewAll={goToStandings}
-        />
+        <Reveal index={3}>
+          <MiniStandings
+            title="Constructors Championship"
+            rows={constructorRows}
+            onViewAll={goToStandings}
+          />
+        </Reveal>
       )}
 
       {/* Footer spacer */}

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { DriverStanding } from '../../types';
 import { formatDriverName, formatPoints } from '../../utils/formatters';
-import { PositionBadge, DriverBadge } from '@/components/ui';
+import { PositionBadge, DriverBadge, PressableScale } from '@/components/ui';
 import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface DriverRowProps {
@@ -20,7 +20,7 @@ const DriverRow: React.FC<DriverRowProps> = ({ standing, index, onPress }) => {
 
   return (
     <>
-      <Pressable style={styles.row} onPress={onPress} disabled={!onPress}>
+      <PressableScale style={styles.row} onPress={onPress} disabled={!onPress}>
         <PositionBadge position={standing.position} />
 
         <DriverBadge code={code} teamColor={teamColor} size={40} />
@@ -46,7 +46,7 @@ const DriverRow: React.FC<DriverRowProps> = ({ standing, index, onPress }) => {
             PTS
           </Text>
         </View>
-      </Pressable>
+      </PressableScale>
 
       {/* Divider - only if not the last item */}
       {index < 19 && <View style={styles.divider} />}

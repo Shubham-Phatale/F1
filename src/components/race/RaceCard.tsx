@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Race } from '../../types';
 import { formatDate, formatTime } from '../../utils/formatters';
-import { SurfaceCard, Flag } from '@/components/ui';
+import { SurfaceCard, Flag, PressableScale } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 interface RaceCardProps {
@@ -14,7 +14,7 @@ interface RaceCardProps {
 const RaceCard: React.FC<RaceCardProps> = ({ race, onPress, highlight = false }) => {
   const country = race.circuit?.location?.country ?? '';
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+    <PressableScale onPress={onPress}>
       <SurfaceCard accentColor={highlight ? colors.accent : undefined}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{race.raceName}</Text>
@@ -32,7 +32,7 @@ const RaceCard: React.FC<RaceCardProps> = ({ race, onPress, highlight = false })
           </Text>
         </View>
       </SurfaceCard>
-    </TouchableOpacity>
+    </PressableScale>
   );
 };
 

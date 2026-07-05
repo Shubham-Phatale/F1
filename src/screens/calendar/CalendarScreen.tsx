@@ -4,7 +4,7 @@ import { Text, SegmentedButtons } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchRacesByYear, setSelectedSeason } from '@/redux/slices/racesSlice';
 import RaceCard from '@/components/race/RaceCard';
-import { ScreenContainer, Skeleton } from '@/components/ui';
+import { ScreenContainer, Skeleton, Reveal } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
 
 const CalendarScreen: React.FC = () => {
@@ -68,7 +68,9 @@ const CalendarScreen: React.FC = () => {
       {!loading && allRaces.length > 0 && (
         <View>
           {allRaces.map((race, index) => (
-            <RaceCard key={race.raceId} race={race} highlight={index === nextUpcomingIndex} />
+            <Reveal key={race.raceId} index={Math.min(index, 6)}>
+              <RaceCard race={race} highlight={index === nextUpcomingIndex} />
+            </Reveal>
           ))}
         </View>
       )}
