@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, SegmentedButtons } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import {
@@ -152,7 +152,7 @@ const LeaderboardScreen: React.FC = () => {
         />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>{renderBody()}</ScrollView>
+      {renderBody()}
     </ScreenContainer>
   );
 };

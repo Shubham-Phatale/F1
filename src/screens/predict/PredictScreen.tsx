@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -119,11 +119,10 @@ const PredictScreen: React.FC = () => {
 
   return (
     <ScreenContainer>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Predict</Text>
-          <Text style={styles.subtitle}>Call the podium before lights out</Text>
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Predict</Text>
+        <Text style={styles.subtitle}>Call the podium before lights out</Text>
+      </View>
 
         {loading ? (
           <Skeleton height={140} count={2} />
@@ -248,7 +247,6 @@ const PredictScreen: React.FC = () => {
             </View>
           </>
         )}
-      </ScrollView>
     </ScreenContainer>
   );
 };

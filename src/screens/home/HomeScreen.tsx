@@ -101,7 +101,6 @@ const HomeScreen: React.FC = () => {
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastRace?.round, selectedSeason]);
 
   // Build MiniStandings rows.
