@@ -5,6 +5,17 @@ import { PaperProvider } from 'react-native-paper';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  TitilliumWeb_600SemiBold,
+  TitilliumWeb_700Bold,
+} from '@expo-google-fonts/titillium-web';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
+import { appTheme } from '@/theme';
 import { store, persistor } from '@/redux/store';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { useAppDispatch } from '@/redux/hooks';
@@ -52,6 +63,14 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
+  const [fontsLoaded] = useFonts({
+    TitilliumWeb_600SemiBold,
+    TitilliumWeb_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
+
   useEffect(() => {
     const hideSplash = async () => {
       await SplashScreen.hideAsync();
@@ -60,10 +79,14 @@ const App: React.FC = () => {
     hideSplash();
   }, []);
 
+  if (!fontsLoaded) {
+    return null; // splash stays visible (SplashScreen.preventAutoHideAsync already called)
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <PaperProvider>
+        <PaperProvider theme={appTheme}>
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
               <AuthGate>
