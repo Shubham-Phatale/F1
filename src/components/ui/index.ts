@@ -6,6 +6,7 @@ export { AttributionText } from './AttributionText';
 export { DriverBadge } from './DriverBadge';
 export { TeamColorBar } from './TeamColorBar';
 export { Flag } from './Flag';
+export { FlagChip } from './FlagChip';
 export { PositionBadge } from './PositionBadge';
 export { SmartImage } from './SmartImage';
 export { Skeleton } from './Skeleton';

@@ -8,8 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Race } from '@/types';
-import { SurfaceCard, Flag } from '@/components/ui';
-import { colors, fontFamily } from '@/theme';
+import { SurfaceCard, FlagChip } from '@/components/ui';
+import { colors, fontFamily, radii, typeScale } from '@/theme';
 import { getRaceLockTime } from '@/utils/predictionRules';
 
 interface Props {
@@ -35,14 +35,14 @@ function computeRemaining(target: number, now: number): Remaining | null {
   };
 }
 
-const Cell: React.FC<{ value: number; label: string }> = ({ value, label }) => (
-  <View style={styles.cell}>
-    <Text style={styles.cellValue}>{String(value).padStart(2, '0')}</Text>
-    <Text style={styles.cellLabel}>{label}</Text>
+const Column: React.FC<{ value: number; label: string }> = ({ value, label }) => (
+  <View style={styles.column}>
+    <Text style={styles.columnValue}>{String(value).padStart(2, '0')}</Text>
+    <Text style={styles.columnLabel}>{label}</Text>
   </View>
 );
 
-const SecondsCell: React.FC<{ value: number; label: string }> = ({ value, label }) => {
+const SecondsColumn: React.FC<{ value: number; label: string }> = ({ value, label }) => {
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -57,12 +57,16 @@ const SecondsCell: React.FC<{ value: number; label: string }> = ({ value, label 
   }));
 
   return (
-    <Animated.View style={[styles.cell, animatedStyle]}>
-      <Text style={styles.cellValue}>{String(value).padStart(2, '0')}</Text>
-      <Text style={styles.cellLabel}>{label}</Text>
-    </Animated.View>
+    <View style={styles.column}>
+      <Animated.Text style={[styles.columnValue, animatedStyle]}>
+        {String(value).padStart(2, '0')}
+      </Animated.Text>
+      <Text style={styles.columnLabel}>{label}</Text>
+    </View>
   );
 };
+
+const Divider: React.FC = () => <View style={styles.divider} />;
 
 export const NextRaceCard: React.FC<Props> = ({ race }) => {
   const lockTime = getRaceLockTime(race.date, race.time);
@@ -95,15 +99,18 @@ export const NextRaceCard: React.FC<Props> = ({ race }) => {
           <Text style={styles.raceName}>{race.raceName}</Text>
           <Text style={styles.circuit}>{race.circuit?.circuitName ?? 'Circuit TBD'}</Text>
         </View>
-        {country ? <Flag country={country} width={32} /> : null}
+        {country ? <FlagChip country={country} width={34} showCode /> : null}
       </View>
 
       {remaining ? (
-        <View style={styles.countdownRow}>
-          <Cell value={remaining.days} label="DAYS" />
-          <Cell value={remaining.hours} label="HRS" />
-          <Cell value={remaining.mins} label="MIN" />
-          <SecondsCell value={remaining.secs} label="SEC" />
+        <View style={styles.countdownPanel}>
+          <Column value={remaining.days} label="DAYS" />
+          <Divider />
+          <Column value={remaining.hours} label="HRS" />
+          <Divider />
+          <Column value={remaining.mins} label="MIN" />
+          <Divider />
+          <SecondsColumn value={remaining.secs} label="SEC" />
         </View>
       ) : (
         <View style={styles.liveRow}>
@@ -123,7 +130,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 10,
   },
@@ -131,9 +138,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   raceName: {
+    ...typeScale.h2,
     color: colors.textPrimary,
-    fontSize: 18,
-    fontFamily: fontFamily.heading,
   },
   circuit: {
     color: colors.textSecondary,
@@ -141,29 +147,36 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     marginTop: 2,
   },
-  countdownRow: {
+  countdownPanel: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'stretch',
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radii.md,
+    paddingVertical: 12,
     marginTop: 14,
   },
-  cell: {
+  column: {
     flex: 1,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: 10,
-    paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  cellValue: {
+  columnValue: {
     color: colors.textPrimary,
-    fontSize: 22,
-    fontFamily: fontFamily.heading,
+    fontSize: 30,
+    fontFamily: fontFamily.mono,
   },
-  cellLabel: {
+  columnLabel: {
     color: colors.textMuted,
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: fontFamily.bodySemi,
     letterSpacing: 1,
-    marginTop: 2,
+    marginTop: 4,
+  },
+  divider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    marginVertical: 4,
+    backgroundColor: colors.lineStrong,
   },
   liveRow: {
     marginTop: 14,

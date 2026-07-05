@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   points: {
     color: colors.accent,
     fontSize: 16,
-    fontFamily: fontFamily.heading,
+    fontFamily: fontFamily.mono,
     minWidth: 44,
     textAlign: 'right',
   },

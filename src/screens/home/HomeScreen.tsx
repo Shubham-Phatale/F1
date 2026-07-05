@@ -29,7 +29,6 @@ const HomeScreen: React.FC = () => {
   const standingsState = useAppSelector(state => state.standings);
   const {
     driverStandings,
-    constructorStandings,
     loading: standingsLoading,
     error: standingsError,
   } = standingsState;
@@ -103,8 +102,8 @@ const HomeScreen: React.FC = () => {
     };
   }, [lastRace?.round, selectedSeason]);
 
-  // Build MiniStandings rows.
-  const driverRows: MiniStandingRow[] = driverStandings.slice(0, 5).map((s, i) => {
+  // Build MiniStandings rows. Home shows a 2-row preview per the redesign.
+  const driverRows: MiniStandingRow[] = driverStandings.slice(0, 2).map((s, i) => {
     const teamName = s.constructors[0]?.name;
     const code = s.driver.code || s.driver.familyName.slice(0, 3).toUpperCase();
     const primary = s.driver.givenName
@@ -121,16 +120,20 @@ const HomeScreen: React.FC = () => {
     };
   });
 
-  const constructorRows: MiniStandingRow[] = constructorStandings.slice(0, 5).map((s, i) => ({
-    position: s.position,
-    primary: s.constructor.name,
-    secondary: s.constructor.nationality,
-    points: formatPoints(s.points),
-    teamColor: getTeamColor(s.constructor.name),
-    emphasize: i === 0,
-  }));
-
   const goToStandings = () => navigation.navigate('Standings');
+
+  const goToFullResults = () => {
+    if (!lastRace || !selectedSeason) return;
+    navigation.navigate('RaceDetails', {
+      raceId: lastRace.raceId,
+      season: selectedSeason,
+      round: lastRace.round,
+    });
+  };
+
+  const lastRoundLabel = lastRace
+    ? `Round ${lastRace.round} · ${lastRace.circuit?.circuitName ?? lastRace.raceName}`
+    : undefined;
 
   return (
     <ScreenContainer>
@@ -138,7 +141,7 @@ const HomeScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.mainTitle}>F1 2026</Text>
         <Text style={styles.subtitle}>
-          {selectedSeason ? `Season ${selectedSeason}` : 'Loading season...'}
+          {selectedSeason ? `SEASON ${selectedSeason}` : 'LOADING SEASON…'}
         </Text>
       </View>
 
@@ -173,6 +176,8 @@ const HomeScreen: React.FC = () => {
             raceName={lastRace.raceName}
             country={lastRace.circuit?.location?.country}
             podium={podium}
+            roundLabel={lastRoundLabel}
+            onFullResults={goToFullResults}
           />
         ) : null}
       </Reveal>
@@ -183,17 +188,6 @@ const HomeScreen: React.FC = () => {
           <MiniStandings
             title="Drivers Championship"
             rows={driverRows}
-            onViewAll={goToStandings}
-          />
-        </Reveal>
-      )}
-
-      {/* Constructors Championship */}
-      {constructorRows.length > 0 && (
-        <Reveal index={3}>
-          <MiniStandings
-            title="Constructors Championship"
-            rows={constructorRows}
             onViewAll={goToStandings}
           />
         </Reveal>
@@ -213,13 +207,16 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     color: colors.textPrimary,
-    fontSize: 26,
-    fontFamily: fontFamily.heading,
+    fontSize: 32,
+    fontFamily: fontFamily.display,
     marginBottom: 4,
   },
   subtitle: {
-    color: colors.textSecondary,
-    fontSize: 13,
+    color: colors.textMuted,
+    fontSize: 11,
+    fontFamily: fontFamily.bodySemi,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   errorContainer: {
     marginHorizontal: 16,
