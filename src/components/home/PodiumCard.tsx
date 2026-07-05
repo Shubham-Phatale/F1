@@ -16,6 +16,7 @@ interface Props {
 
 const STEP_HEIGHT: Record<string, number> = { '1': 58, '2': 42, '3': 30 };
 const BADGE_SIZE: Record<string, number> = { '1': 60, '2': 52, '3': 52 };
+const CROWN_SIZE = 18;
 
 function podiumColor(position: string): string {
   if (position === '1') return colors.podiumGold;
@@ -40,19 +41,21 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const PodiumColumn: React.FC<{ result: RaceResult }> = ({ result }) => {
+/** Driver info (crown / badge / name / team) for one podium slot. */
+const PodiumInfo: React.FC<{ result: RaceResult }> = ({ result }) => {
   const isFirst = result.position === '1';
   const teamColor = getTeamColor(result.constructor.name);
   const code = result.driver.code || result.driver.familyName.slice(0, 3).toUpperCase();
-  const accent = podiumColor(result.position);
-  const height = STEP_HEIGHT[result.position] ?? 30;
   const badgeSize = BADGE_SIZE[result.position] ?? 52;
 
   return (
-    <View style={styles.column}>
+    <View style={styles.infoColumn}>
       {isFirst ? (
-        <MaterialCommunityIcons name="crown" size={18} color={colors.podiumGold} />
-      ) : null}
+        <MaterialCommunityIcons name="crown" size={CROWN_SIZE} color={colors.podiumGold} />
+      ) : (
+        // Reserve the crown's height so all three badges bottom-align cleanly.
+        <View style={styles.crownSpacer} />
+      )}
       <DriverBadge code={code} teamColor={teamColor} size={badgeSize} />
       <Text style={styles.familyName} numberOfLines={1}>
         {result.driver.familyName}
@@ -60,7 +63,16 @@ const PodiumColumn: React.FC<{ result: RaceResult }> = ({ result }) => {
       <Text style={styles.teamName} numberOfLines={1}>
         {result.constructor.name}
       </Text>
+    </View>
+  );
+};
 
+/** The staggered podium step (colored block with the rank number). */
+const PodiumStep: React.FC<{ result: RaceResult }> = ({ result }) => {
+  const accent = podiumColor(result.position);
+  const height = STEP_HEIGHT[result.position] ?? 30;
+  return (
+    <View style={styles.stepColumn}>
       <View style={[styles.step, { height }]}>
         <LinearGradient
           colors={stepGradient(result.position)}
@@ -86,11 +98,14 @@ export const PodiumCard: React.FC<Props> = ({
 
   const byPosition = (pos: string) => podium.find(r => r.position === pos);
   // Visual order: P2 · P1 · P3 (winner centered).
-  const displayOrder = ['2', '1', '3']
+  const order = ['2', '1', '3']
     .map(byPosition)
     .filter((r): r is RaceResult => Boolean(r));
 
-  // Fastest lap = the result whose fastestLap.rank === '1'. Hidden if none.
+  if (order.length < 3) return null;
+
+  // Fastest lap = the result whose fastestLap.rank === '1' (any driver, not just
+  // the podium). Hidden if the data has none.
   const fastest = podium.find(r => r.fastestLap?.rank === '1');
   const fastestCode = fastest
     ? fastest.driver.code || fastest.driver.familyName.slice(0, 3).toUpperCase()
@@ -114,10 +129,18 @@ export const PodiumCard: React.FC<Props> = ({
         {country ? <FlagChip country={country} width={40} /> : null}
       </View>
 
-      <View style={styles.podiumRow}>
-        {displayOrder.map(result => (
-          <PodiumColumn key={result.position} result={result} />
-        ))}
+      {/* Podium: driver info bottom-aligned, staggered steps directly beneath. */}
+      <View style={styles.podium}>
+        <View style={styles.infoRow}>
+          {order.map(result => (
+            <PodiumInfo key={result.position} result={result} />
+          ))}
+        </View>
+        <View style={styles.stepsRow}>
+          {order.map(result => (
+            <PodiumStep key={result.position} result={result} />
+          ))}
+        </View>
       </View>
 
       {hasFastest || onFullResults ? (
@@ -128,8 +151,7 @@ export const PodiumCard: React.FC<Props> = ({
               <View style={styles.fastestLap}>
                 <MaterialIcons name="timer" size={16} color={colors.textSecondary} />
                 <Text style={styles.fastestText}>
-                  Fastest lap{' '}
-                  <Text style={styles.fastestCode}>{fastestCode}</Text>{' '}
+                  Fastest lap <Text style={styles.fastestCode}>{fastestCode}</Text>{' '}
                   <Text style={styles.fastestTime}>{fastestTime}</Text>
                 </Text>
               </View>
@@ -171,16 +193,20 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     marginTop: 3,
   },
-  podiumRow: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'flex-end',
-    marginTop: 18,
+  podium: {
+    marginTop: 16,
   },
-  column: {
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  infoColumn: {
     flex: 1,
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
+  },
+  crownSpacer: {
+    height: CROWN_SIZE,
   },
   familyName: {
     color: colors.textPrimary,
@@ -194,11 +220,19 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     textAlign: 'center',
   },
+  stepsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+    marginTop: 10,
+  },
+  stepColumn: {
+    flex: 1,
+  },
   step: {
     width: '100%',
     borderTopLeftRadius: 11,
     borderTopRightRadius: 11,
-    marginTop: 6,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',

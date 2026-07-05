@@ -86,10 +86,9 @@ const HomeScreen: React.FC = () => {
       .getRaceResults(selectedSeason, lastRace.round)
       .then(results => {
         if (!alive) return;
-        const top3 = results
-          .filter(r => ['1', '2', '3'].includes(r.position))
-          .sort((a, b) => Number(a.position) - Number(b.position));
-        setPodium(top3);
+        // Pass the FULL results: PodiumCard picks P1/P2/P3 for the steps and
+        // finds the rank-1 fastest lap (which may belong to a non-podium driver).
+        setPodium(results);
       })
       .catch(() => {
         if (alive) setPodium([]);
