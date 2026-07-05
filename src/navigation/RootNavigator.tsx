@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
+import { navigationTheme } from '@/theme';
 import { HomeNavigator } from './HomeNavigator';
 import DriverDetailScreen from '@/screens/driver-detail/DriverDetailScreen';
 import HeadToHeadScreen from '@/screens/head-to-head/HeadToHeadScreen';
@@ -15,7 +16,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator: React.FC = () => {
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

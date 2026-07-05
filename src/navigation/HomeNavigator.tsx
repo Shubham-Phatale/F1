@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeTabParamList } from './types';
+import { colors } from '@/theme';
 import HomeScreen from '@/screens/home/HomeScreen';
 import CalendarScreen from '@/screens/calendar/CalendarScreen';
 import StandingsScreen from '@/screens/standings/StandingsScreen';
@@ -10,8 +11,8 @@ import ProfileScreen from '@/screens/profile/ProfileScreen';
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
 const TAB_COLORS = {
-  active: '#1976d2',
-  inactive: '#666',
+  active: colors.accent,
+  inactive: colors.textMuted,
 };
 
 export const HomeNavigator: React.FC = () => {
