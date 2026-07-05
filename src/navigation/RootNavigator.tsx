@@ -9,6 +9,7 @@ import TrendAnalysisScreen from '@/screens/trend-analysis/TrendAnalysisScreen';
 import ConstructorAnalysisScreen from '@/screens/constructor-analysis/ConstructorAnalysisScreen';
 import LoginScreen from '@/screens/auth/LoginScreen';
 import RegisterScreen from '@/screens/auth/RegisterScreen';
+import AboutScreen from '@/screens/about/AboutScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -73,6 +74,14 @@ export const RootNavigator: React.FC = () => {
           options={{
             headerShown: true,
             title: 'Sign Up',
+          }}
+        />
+        <Stack.Screen
+          name="About"
+          component={AboutScreen}
+          options={{
+            headerShown: true,
+            title: 'About',
           }}
         />
       </Stack.Navigator>
