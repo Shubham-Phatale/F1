@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, Divider, SegmentedButtons } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Text, SegmentedButtons } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { setSelectedDriverId } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
 import { TrendData } from '@/types';
 import TrendChart from '@/components/analytics/TrendChart';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import { ScreenContainer, SurfaceCard, Skeleton } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 type SeasonStanding = { season: string; points: number; position: number; wins: number };
 
@@ -88,20 +89,13 @@ const TrendAnalysisScreen: React.FC<TrendAnalysisScreenProps> = ({ route }) => {
   const driverName = driver ? `${driver.givenName} ${driver.familyName}` : '';
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
       {/* Header Section */}
       {driver && (
-        <>
-          <View style={styles.header}>
-            <Text variant="headlineSmall" style={styles.driverName}>
-              {driverName}
-            </Text>
-            <Text variant="bodySmall" style={styles.subtitle}>
-              Performance Trends
-            </Text>
-          </View>
-          <Divider />
-        </>
+        <View style={styles.header}>
+          <Text style={styles.driverName}>{driverName}</Text>
+          <Text style={styles.subtitle}>Performance Trends</Text>
+        </View>
       )}
 
       {/* Driver not found */}
@@ -123,11 +117,11 @@ const TrendAnalysisScreen: React.FC<TrendAnalysisScreenProps> = ({ route }) => {
 
           {/* Trend Chart */}
           {loading ? (
-            <SkeletonLoader height={300} count={1} />
+            <Skeleton height={300} count={1} />
           ) : hasTrendData && activeTrend ? (
-            <View style={styles.chartContainer}>
+            <SurfaceCard>
               <TrendChart trendData={activeTrend} metric={selectedMetric} height={300} />
-            </View>
+            </SurfaceCard>
           ) : (
             <View style={styles.emptyStateContainer}>
               <Text style={styles.emptyStateText}>No trend data available for this driver</Text>
@@ -135,38 +129,32 @@ const TrendAnalysisScreen: React.FC<TrendAnalysisScreenProps> = ({ route }) => {
           )}
         </View>
       )}
-
-      {/* Footer spacer */}
-      <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
   driverName: {
-    fontWeight: 'bold',
-    marginBottom: 8,
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontFamily: fontFamily.heading,
+    marginBottom: 6,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 13,
   },
   body: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     marginTop: 8,
   },
   segmentedButtons: {
     marginBottom: 8,
-  },
-  chartContainer: {
-    marginTop: 8,
+    marginHorizontal: 4,
   },
   emptyStateContainer: {
     marginHorizontal: 16,
@@ -175,11 +163,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
-  },
-  footer: {
-    height: 20,
   },
 });
 

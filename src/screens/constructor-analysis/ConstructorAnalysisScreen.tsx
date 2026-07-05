@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, Divider } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Text } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { setConstructorStats } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
 import ConstructorComparison from '@/components/analytics/ConstructorComparison';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import { ScreenContainer, Skeleton } from '@/components/ui';
+import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface ConstructorAnalysisScreenProps {
   route: {
@@ -72,24 +73,22 @@ const ConstructorAnalysisScreen: React.FC<ConstructorAnalysisScreenProps> = ({ r
   const stats = constructorStats.find(s => s.constructorId === constructorId);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
       {/* Header Section */}
       {constructor && (
-        <>
-          <View style={styles.header}>
-            <Text variant="headlineSmall" style={styles.constructorName}>
-              {constructor.name}
-            </Text>
-            <Text variant="bodySmall" style={styles.subtitle}>
-              {constructor.nationality}
-            </Text>
+        <View style={styles.header}>
+          <View
+            style={[styles.teamBar, { backgroundColor: getTeamColor(constructor.name) }]}
+          />
+          <View style={styles.headerInfo}>
+            <Text style={styles.constructorName}>{constructor.name}</Text>
+            <Text style={styles.subtitle}>{constructor.nationality}</Text>
           </View>
-          <Divider />
-        </>
+        </View>
       )}
 
       {/* Loading State */}
-      {loading && <SkeletonLoader height={60} count={4} />}
+      {loading && <Skeleton height={60} count={4} />}
 
       {/* Constructor not found */}
       {!constructor && !loading && (
@@ -100,28 +99,35 @@ const ConstructorAnalysisScreen: React.FC<ConstructorAnalysisScreenProps> = ({ r
 
       {/* Team Performance */}
       {constructor && !loading && stats && <ConstructorComparison stats={stats} />}
-
-      {/* Footer spacer */}
-      <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  teamBar: {
+    width: 4,
+    height: 44,
+    borderRadius: 2,
+  },
+  headerInfo: {
+    flex: 1,
+  },
   constructorName: {
-    fontWeight: 'bold',
-    marginBottom: 8,
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontFamily: fontFamily.heading,
+    marginBottom: 4,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 13,
   },
   emptyStateContainer: {
     marginHorizontal: 16,
@@ -130,11 +136,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
-  },
-  footer: {
-    height: 20,
   },
 });
 

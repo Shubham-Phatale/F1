@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, Divider, Button } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -12,10 +12,19 @@ import {
 } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
+import { openF1Service, DriverMedia } from '@/services/openF1Service';
 import { Driver } from '@/types';
 import DriverDashboard from '@/components/analytics/DriverDashboard';
 import TrendChart from '@/components/analytics/TrendChart';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import {
+  ScreenContainer,
+  SurfaceCard,
+  SectionHeader,
+  SmartImage,
+  DriverBadge,
+  Skeleton,
+} from '@/components/ui';
+import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface DriverDetailScreenProps {
   route: {
@@ -46,6 +55,26 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
   );
 
   const driver = resolvedDriver;
+
+  // Constructor for this driver (used for the fallback team color).
+  const constructorName =
+    driverStandings.find(s => s.driver.driverId === driverId)?.constructors[0]?.name ?? '';
+
+  // OpenF1 driver media (headshot + team color); resolves to null on miss/offline.
+  const [media, setMedia] = useState<DriverMedia | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (driver?.code) {
+      openF1Service.getDriverMedia(driver.code).then(m => {
+        if (alive) setMedia(m);
+      });
+    }
+    return () => {
+      alive = false;
+    };
+  }, [driver?.code]);
+
+  const teamColor = media?.teamColour ?? getTeamColor(constructorName);
 
   // Fetch aggregated season results + multi-season standings, then compute
   // stats + trend data and store them in the analytics slice.
@@ -112,25 +141,33 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
   const driverName = driver ? `${driver.givenName} ${driver.familyName}` : '';
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header Section */}
+    <ScreenContainer>
+      {/* Photo Header */}
       {driver && (
-        <>
-          <View style={styles.header}>
-            <Text variant="headlineSmall" style={styles.driverName}>
-              {driverName}
-            </Text>
-            <Text variant="bodySmall" style={styles.subtitle}>
+        <View style={styles.header}>
+          <SmartImage
+            uri={media?.headshotUrl ?? null}
+            width={96}
+            height={96}
+            borderRadius={14}
+            fallback={<DriverBadge code={driver?.code ?? '??'} teamColor={teamColor} size={96} />}
+          />
+          <View style={styles.headerInfo}>
+            <Text style={styles.driverName}>{driverName}</Text>
+            <View style={[styles.teamPill, { backgroundColor: teamColor }]} />
+            <Text style={styles.subtitle}>
               {driver.nationality}
               {driver.permanentNumber ? ` · #${driver.permanentNumber}` : ''}
             </Text>
+            {constructorName ? (
+              <Text style={styles.teamName}>{constructorName}</Text>
+            ) : null}
           </View>
-          <Divider />
-        </>
+        </View>
       )}
 
       {/* Loading State */}
-      {loading && <SkeletonLoader height={60} count={4} />}
+      {loading && <Skeleton height={60} count={4} />}
 
       {/* Driver not found */}
       {!driver && !loading && (
@@ -144,12 +181,12 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
 
       {/* Trend Chart */}
       {driver && !loading && hasTrend && trend && (
-        <View style={styles.chartContainer}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Performance Trend
-          </Text>
-          <TrendChart trendData={trend} metric={trend.metricType} height={300} />
-        </View>
+        <>
+          <SectionHeader title="Performance Trend" />
+          <SurfaceCard>
+            <TrendChart trendData={trend} metric={trend.metricType} height={300} />
+          </SurfaceCard>
+        </>
       )}
 
       {/* Trend Analysis Entry Point */}
@@ -163,36 +200,43 @@ const DriverDetailScreen: React.FC<DriverDetailScreenProps> = ({ route }) => {
           </Button>
         </View>
       )}
-
-      {/* Footer spacer */}
-      <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  headerInfo: {
+    flex: 1,
+  },
   driverName: {
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontFamily: fontFamily.heading,
+    marginBottom: 6,
+  },
+  teamPill: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
     marginBottom: 8,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: fontFamily.body,
   },
-  chartContainer: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
+  teamName: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fontFamily.body,
+    marginTop: 2,
   },
   actionContainer: {
     paddingHorizontal: 16,
@@ -205,11 +249,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
-  },
-  footer: {
-    height: 20,
   },
 });
 

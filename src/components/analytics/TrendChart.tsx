@@ -3,6 +3,7 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Canvas, Path, Circle, Line, Skia, vec } from '@shopify/react-native-skia';
 import { TrendData } from '../../types';
+import { colors } from '@/theme';
 
 type NumericMetric = TrendData['metricType'];
 
@@ -19,9 +20,9 @@ interface TrendChartProps {
 const HORIZONTAL_PADDING = 32;
 const CHART_INSET = 24;
 const GRID_LINE_COUNT = 4;
-const LINE_COLOR = '#e10600';
-const GRID_COLOR = '#e0e0e0';
-const POINT_COLOR = '#e10600';
+const LINE_COLOR = colors.accent;
+const GRID_COLOR = colors.border;
+const POINT_COLOR = colors.accent;
 
 const TrendChart: React.FC<TrendChartProps> = ({ trendData, metric, height = 300 }) => {
   const seasons = trendData?.seasons ?? [];
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   axisLabel: {
-    color: '#666',
+    color: colors.textMuted,
     marginBottom: 4,
     marginLeft: CHART_INSET,
     textTransform: 'capitalize',
@@ -126,12 +127,12 @@ const styles = StyleSheet.create({
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.surface,
     borderRadius: 8,
     marginVertical: 8,
   },
   placeholderText: {
-    color: '#999',
+    color: colors.textMuted,
   },
 });
 

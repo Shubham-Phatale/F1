@@ -6,6 +6,8 @@ import { setHeadToHeadComparisons } from '@/redux/slices/analyticsSlice';
 import { analyticsService } from '@/services/analyticsService';
 import { ergastService } from '@/services/ergastAPI';
 import HeadToHeadCard from '@/components/analytics/HeadToHeadCard';
+import { ScreenContainer } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 interface HeadToHeadScreenProps {
   route?: {
@@ -123,30 +125,22 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Head to Head
-        </Text>
-        <Text variant="bodySmall" style={styles.subtitle}>
-          Pick two drivers to compare
-        </Text>
+        <Text style={styles.title}>Head to Head</Text>
+        <Text style={styles.subtitle}>Pick two drivers to compare</Text>
       </View>
 
       {/* Driver 1 picker */}
       <View style={styles.pickerSection}>
-        <Text variant="labelLarge" style={styles.pickerLabel}>
-          Driver 1
-        </Text>
+        <Text style={styles.pickerLabel}>Driver 1</Text>
         {renderPicker(driver1Id, driver2Id, selectDriver1)}
       </View>
 
       {/* Driver 2 picker */}
       <View style={styles.pickerSection}>
-        <Text variant="labelLarge" style={styles.pickerLabel}>
-          Driver 2
-        </Text>
+        <Text style={styles.pickerLabel}>Driver 2</Text>
         {renderPicker(driver2Id, driver1Id, selectDriver2)}
       </View>
 
@@ -170,28 +164,24 @@ const HeadToHeadScreen: React.FC<HeadToHeadScreenProps> = ({ route }) => {
 
       {/* Comparison result */}
       {bothSelected && !loading && comparison && <HeadToHeadCard comparison={comparison} />}
-
-      {/* Footer spacer */}
-      <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
   },
   title: {
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: 26,
+    fontFamily: fontFamily.heading,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 13,
     marginTop: 4,
   },
   pickerSection: {
@@ -200,7 +190,11 @@ const styles = StyleSheet.create({
   pickerLabel: {
     paddingHorizontal: 16,
     marginBottom: 8,
-    color: '#333',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.bodySemi,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontSize: 12,
   },
   chipRow: {
     paddingHorizontal: 16,
@@ -215,12 +209,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
-  },
-  footer: {
-    height: 20,
   },
 });
 
