@@ -25,11 +25,21 @@ export const PodiumCard: React.FC<Props> = ({ raceName, country, podium }) => {
           const teamColor = getTeamColor(result.constructor.name);
           const code =
             result.driver.code || result.driver.familyName.slice(0, 3).toUpperCase();
+          const isFirst = result.position === '1';
+          const isSecond = result.position === '2';
+          const glowStyle = isFirst
+            ? styles.glowGold
+            : isSecond
+            ? styles.glowSilver
+            : styles.glowBronze;
           return (
-            <View key={result.position} style={styles.column}>
+            <View
+              key={result.position}
+              style={[styles.column, isFirst && styles.columnFirst]}
+            >
               <PositionBadge position={result.position} />
-              <View style={styles.badgeWrap}>
-                <DriverBadge code={code} teamColor={teamColor} size={44} />
+              <View style={[styles.badgeWrap, glowStyle]}>
+                <DriverBadge code={code} teamColor={teamColor} size={isFirst ? 52 : 44} />
               </View>
               <Text style={styles.familyName} numberOfLines={1}>
                 {result.driver.familyName}
@@ -62,14 +72,39 @@ const styles = StyleSheet.create({
   podiumRow: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'flex-start',
   },
   column: {
     flex: 1,
     alignItems: 'center',
   },
+  columnFirst: {
+    marginTop: -10,
+  },
   badgeWrap: {
     marginTop: 8,
     marginBottom: 6,
+  },
+  glowGold: {
+    shadowColor: colors.podiumGold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  glowSilver: {
+    shadowColor: colors.podiumSilver,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  glowBronze: {
+    shadowColor: colors.podiumBronze,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   familyName: {
     color: colors.textPrimary,

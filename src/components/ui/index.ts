@@ -12,3 +12,4 @@ export { Skeleton } from './Skeleton';
 export { StatCard } from './StatCard';
 export { Reveal } from './Reveal';
 export { PressableScale } from './PressableScale';
+export { AnimatedTabIcon } from './AnimatedTabIcon';

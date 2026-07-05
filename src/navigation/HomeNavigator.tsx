@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeTabParamList } from './types';
 import { colors } from '@/theme';
+import { AnimatedTabIcon } from '@/components/ui';
 import HomeScreen from '@/screens/home/HomeScreen';
 import CalendarScreen from '@/screens/calendar/CalendarScreen';
 import StandingsScreen from '@/screens/standings/StandingsScreen';
@@ -36,7 +37,14 @@ export const HomeNavigator: React.FC = () => {
             iconName = focused ? 'person' : 'person-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return (
+            <AnimatedTabIcon
+              focused={focused}
+              name={iconName}
+              size={size}
+              color={color}
+            />
+          );
         },
         tabBarActiveTintColor: TAB_COLORS.active,
         tabBarInactiveTintColor: TAB_COLORS.inactive,

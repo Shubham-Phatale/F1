@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { Race } from '@/types';
 import { SurfaceCard, Flag } from '@/components/ui';
 import { colors, fontFamily } from '@/theme';
@@ -35,6 +42,28 @@ const Cell: React.FC<{ value: number; label: string }> = ({ value, label }) => (
   </View>
 );
 
+const SecondsCell: React.FC<{ value: number; label: string }> = ({ value, label }) => {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withSequence(
+      withTiming(1.06, { duration: 75 }),
+      withTiming(1, { duration: 75 })
+    );
+  }, [value, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.cell, animatedStyle]}>
+      <Text style={styles.cellValue}>{String(value).padStart(2, '0')}</Text>
+      <Text style={styles.cellLabel}>{label}</Text>
+    </Animated.View>
+  );
+};
+
 export const NextRaceCard: React.FC<Props> = ({ race }) => {
   const lockTime = getRaceLockTime(race.date, race.time);
   const [remaining, setRemaining] = useState<Remaining | null>(() =>
@@ -52,6 +81,15 @@ export const NextRaceCard: React.FC<Props> = ({ race }) => {
 
   return (
     <SurfaceCard accentColor={colors.accent}>
+      <View style={styles.gradientClip} pointerEvents="none">
+        <LinearGradient
+          colors={['#2a0e17', colors.surface]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
           <Text style={styles.raceName}>{race.raceName}</Text>
@@ -65,7 +103,7 @@ export const NextRaceCard: React.FC<Props> = ({ race }) => {
           <Cell value={remaining.days} label="DAYS" />
           <Cell value={remaining.hours} label="HRS" />
           <Cell value={remaining.mins} label="MIN" />
-          <Cell value={remaining.secs} label="SEC" />
+          <SecondsCell value={remaining.secs} label="SEC" />
         </View>
       ) : (
         <View style={styles.liveRow}>
@@ -78,6 +116,11 @@ export const NextRaceCard: React.FC<Props> = ({ race }) => {
 };
 
 const styles = StyleSheet.create({
+  gradientClip: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
