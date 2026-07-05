@@ -18,6 +18,8 @@ import uiReducer from './slices/uiSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import authReducer from './slices/authSlice';
 import usersReducer from './slices/usersSlice';
+import predictionsReducer from './slices/predictionsSlice';
+import leaderboardReducer from './slices/leaderboardSlice';
 
 // Redux Persist configuration.
 // `version` is bumped whenever the persisted data shape changes so stale cached
@@ -39,6 +41,8 @@ const rootReducer = combineReducers({
   analytics: analyticsReducer,
   auth: authReducer,
   users: usersReducer,
+  predictions: predictionsReducer,
+  leaderboard: leaderboardReducer,
 });
 
 // Apply persist to root reducer
