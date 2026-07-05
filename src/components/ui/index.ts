@@ -14,3 +14,5 @@ export { StatCard } from './StatCard';
 export { Reveal } from './Reveal';
 export { PressableScale } from './PressableScale';
 export { AnimatedTabIcon } from './AnimatedTabIcon';
+export { SegmentedControl } from './SegmentedControl';
+export { AppButton } from './AppButton';
