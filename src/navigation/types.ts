@@ -23,4 +23,6 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   About: undefined;
+  MakePrediction: { season: string; round: string; raceId: string };
+  Leaderboard: undefined;
 };
