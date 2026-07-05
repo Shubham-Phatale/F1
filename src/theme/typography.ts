@@ -4,10 +4,13 @@ export const fontFamily = {
   body: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   bodySemi: 'Inter_600SemiBold',
+  display: 'TitilliumWeb_900Black',
+  mono: 'JetBrainsMono_700Bold',
+  monoSemi: 'JetBrainsMono_600SemiBold',
 } as const;
 
 export const typeScale = {
-  display: { fontSize: 32, fontFamily: fontFamily.heading },
+  display: { fontSize: 32, fontFamily: fontFamily.display },
   h1: { fontSize: 24, fontFamily: fontFamily.heading },
   h2: { fontSize: 18, fontFamily: fontFamily.headingSemi },
   body: { fontSize: 14, fontFamily: fontFamily.body },
@@ -17,4 +20,5 @@ export const typeScale = {
     letterSpacing: 1,
     textTransform: 'uppercase' as const,
   },
+  numeral: { fontFamily: fontFamily.mono },
 } as const;

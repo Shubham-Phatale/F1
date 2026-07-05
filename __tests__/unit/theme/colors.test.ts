@@ -11,4 +11,9 @@ describe('theme colors', () => {
     expect(colors.podiumSilver).toBe('#c8c8d0');
     expect(colors.podiumBronze).toBe('#cd7f4d');
   });
+  test('redesign tile/line/accent-soft tokens exist', () => {
+    expect(colors.tile).toBe('#24242B');
+    expect(colors.lineStrong).toBe('rgba(255,255,255,0.13)');
+    expect(colors.accentSoft).toBe('rgba(220,10,45,0.15)');
+  });
 });

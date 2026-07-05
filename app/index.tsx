@@ -9,12 +9,17 @@ import {
   useFonts,
   TitilliumWeb_600SemiBold,
   TitilliumWeb_700Bold,
+  TitilliumWeb_900Black,
 } from '@expo-google-fonts/titillium-web';
 import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
 } from '@expo-google-fonts/inter';
+import {
+  JetBrainsMono_600SemiBold,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
 import { appTheme } from '@/theme';
 import { store, persistor } from '@/redux/store';
 import { RootNavigator } from '@/navigation/RootNavigator';
@@ -66,9 +71,12 @@ const App: React.FC = () => {
   const [fontsLoaded] = useFonts({
     TitilliumWeb_600SemiBold,
     TitilliumWeb_700Bold,
+    TitilliumWeb_900Black,
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    JetBrainsMono_600SemiBold,
+    JetBrainsMono_700Bold,
   });
 
   useEffect(() => {

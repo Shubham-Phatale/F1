@@ -12,6 +12,9 @@ export const colors = {
   podiumGold: '#ffd23f',
   podiumSilver: '#c8c8d0',
   podiumBronze: '#cd7f4d',
+  tile: '#24242B',
+  lineStrong: 'rgba(255,255,255,0.13)',
+  accentSoft: 'rgba(220,10,45,0.15)',
 } as const;
 
 export type AppColors = typeof colors;
