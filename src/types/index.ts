@@ -286,3 +286,32 @@ export interface AnalyticsState {
   loading: boolean;
   error: string | null;
 }
+
+// Phase 3B — Predictions & Leaderboard
+export interface Prediction {
+  uid: string;
+  season: string;
+  round: string;
+  raceId: string;
+  p1: string;
+  p2: string;
+  p3: string;
+  displayName: string;
+  createdAt: string;
+  status: 'pending' | 'scored';
+  pointsEarned: number | null;
+}
+
+export interface LeaderboardEntry {
+  uid: string;
+  displayName: string;
+  seasonPoints: number;
+  racesPlayed: number;
+  updatedAt: string;
+}
+
+export interface PodiumScore {
+  perSlot: [number, number, number];
+  bonus: number;
+  total: number;
+}
