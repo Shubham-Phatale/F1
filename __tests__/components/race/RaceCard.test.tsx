@@ -3,33 +3,6 @@ import { render, screen } from '@testing-library/react-native';
 import RaceCard from '@/components/race/RaceCard';
 import { Race } from '@/types';
 
-// Mock react-native-paper components
-jest.mock('react-native-paper', () => {
-  const { View, Text: RNText } = require('react-native');
-  const Card = ({
-    children,
-  }: {
-    children: React.ReactNode;
-    style?: any;
-  }) => <View>{children}</View>;
-  Card.Content = ({
-    children,
-  }: {
-    children: React.ReactNode;
-    style?: any;
-  }) => <View>{children}</View>;
-  return {
-    Card,
-    Text: ({
-      children,
-    }: {
-      children: React.ReactNode;
-      variant?: string;
-      style?: any;
-    }) => <RNText>{children}</RNText>,
-  };
-});
-
 // Mock formatters
 jest.mock('@/utils/formatters', () => ({
   formatDate: (date: string) => {
@@ -99,25 +72,18 @@ describe('RaceCard', () => {
     expect(screen.getByText('Bahrain, Bahrain')).toBeTruthy();
   });
 
-  it('displays formatted date', async () => {
+  it('displays formatted date and time together', async () => {
     await render(<RaceCard race={mockRace} />);
 
-    // formatDate converts the ISO date into a localized "Mon D, YYYY" string.
-    // Compute the expected value the same way the mock does so the assertion
+    // Date + time are combined into a single meta line: "<date> · <time>".
+    // Compute the expected date the same way the mock does so the assertion
     // is not sensitive to the test environment's timezone.
     const expectedDate = new Date(mockRace.date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
-    expect(screen.getByText(expectedDate)).toBeTruthy();
-  });
-
-  it('displays formatted time', async () => {
-    await render(<RaceCard race={mockRace} />);
-
-    // formatTime will convert '13:00:00Z' to '13:00'
-    expect(screen.getByText('13:00')).toBeTruthy();
+    expect(screen.getByText(`${expectedDate} · 13:00`)).toBeTruthy();
   });
 
   it('renders race card with optional onPress handler', async () => {
@@ -136,17 +102,24 @@ describe('RaceCard', () => {
     await render(<RaceCard race={raceWithoutTime} />);
 
     expect(screen.getByText('Bahrain GP')).toBeTruthy();
-    // Should display the formatter's fallback '--:--'
-    expect(screen.getByText('--:--')).toBeTruthy();
+    // Should display the formatter's fallback '--:--' in the combined meta line
+    const expectedDate = new Date(mockRace.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    expect(screen.getByText(`${expectedDate} · --:--`)).toBeTruthy();
   });
 
-  it('displays race info blocks with labels', async () => {
-    await render(<RaceCard race={mockRace} />);
+  it('handles race with missing location gracefully', async () => {
+    const raceWithoutLocation = {
+      ...mockRace,
+      circuit: { ...mockRace.circuit, location: undefined },
+    } as unknown as Race;
 
-    // These labels should appear in the component
-    expect(screen.getByText('Date')).toBeTruthy();
-    expect(screen.getByText('Circuit')).toBeTruthy();
-    expect(screen.getByText('Location')).toBeTruthy();
-    expect(screen.getByText('Time')).toBeTruthy();
+    await render(<RaceCard race={raceWithoutLocation} />);
+
+    expect(screen.getByText('Bahrain GP')).toBeTruthy();
+    expect(screen.getByText('Location TBD')).toBeTruthy();
   });
 });

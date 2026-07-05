@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, SegmentedButtons } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchRacesByYear, setSelectedSeason } from '@/redux/slices/racesSlice';
 import RaceCard from '@/components/race/RaceCard';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import { ScreenContainer, Skeleton } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 const CalendarScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -28,13 +29,15 @@ const CalendarScreen: React.FC = () => {
     }
   }, [displaySeason, dispatch]);
 
+  // Index of the first upcoming race (date >= today) to highlight
+  const now = new Date();
+  const nextUpcomingIndex = allRaces.findIndex(race => new Date(race.date) >= now);
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          F1 Calendar
-        </Text>
+        <Text style={styles.title}>F1 Calendar</Text>
       </View>
 
       {/* Season Selector */}
@@ -54,20 +57,18 @@ const CalendarScreen: React.FC = () => {
       {/* Race Count */}
       {!loading && (
         <View style={styles.raceCountContainer}>
-          <Text variant="bodySmall" style={styles.raceCount}>
-            {allRaces.length} races
-          </Text>
+          <Text style={styles.raceCount}>{allRaces.length} races</Text>
         </View>
       )}
 
       {/* Loading State */}
-      {loading && <SkeletonLoader height={200} count={5} />}
+      {loading && <Skeleton height={100} count={5} />}
 
       {/* Races List */}
       {!loading && allRaces.length > 0 && (
         <View>
-          {allRaces.map(race => (
-            <RaceCard key={race.raceId} race={race} />
+          {allRaces.map((race, index) => (
+            <RaceCard key={race.raceId} race={race} highlight={index === nextUpcomingIndex} />
           ))}
         </View>
       )}
@@ -81,22 +82,20 @@ const CalendarScreen: React.FC = () => {
 
       {/* Footer */}
       <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 4,
   },
   title: {
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: 26,
+    fontFamily: fontFamily.heading,
   },
   seasonSelectorContainer: {
     paddingHorizontal: 16,
@@ -110,7 +109,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   raceCount: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 12,
   },
   emptyStateContainer: {
     marginHorizontal: 16,
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
   },
   footer: {

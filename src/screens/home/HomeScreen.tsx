@@ -1,13 +1,20 @@
 import React, { useEffect } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchCurrentSeason, fetchRacesByYear } from '@/redux/slices/racesSlice';
 import { fetchStandings } from '@/redux/slices/standingsSlice';
 import RaceCard from '@/components/race/RaceCard';
-import StatCard from '@/components/race/StatCard';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
-import { formatDate, formatPosition, formatPoints } from '@/utils/formatters';
+import {
+  ScreenContainer,
+  SectionHeader,
+  SurfaceCard,
+  StatCard,
+  DriverBadge,
+  Skeleton,
+} from '@/components/ui';
+import { colors, fontFamily, getTeamColor } from '@/theme';
+import { formatPosition, formatPoints } from '@/utils/formatters';
 
 const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -50,13 +57,11 @@ const HomeScreen: React.FC = () => {
     driverStandings && driverStandings.length > 0 ? driverStandings[0] : null;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
       {/* Header Section */}
       <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.mainTitle}>
-          F1 2026
-        </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
+        <Text style={styles.mainTitle}>F1 2026</Text>
+        <Text style={styles.subtitle}>
           {selectedSeason ? `Season ${selectedSeason}` : 'Loading season...'}
         </Text>
       </View>
@@ -69,93 +74,73 @@ const HomeScreen: React.FC = () => {
       )}
 
       {/* Latest Race Section */}
-      <View style={styles.sectionContainer}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>
-          Latest Race
-        </Text>
-
-        {isLoading ? (
-          <SkeletonLoader height={200} count={1} />
-        ) : latestRace ? (
-          <RaceCard race={latestRace} />
-        ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>No races available</Text>
-          </View>
-        )}
-      </View>
+      <SectionHeader title="Latest Race" />
+      {isLoading ? (
+        <Skeleton height={120} count={1} />
+      ) : latestRace ? (
+        <RaceCard race={latestRace} />
+      ) : (
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateText}>No races available</Text>
+        </View>
+      )}
 
       {/* Championship Leader Section */}
-      <View style={styles.sectionContainer}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>
-          Championship Leader
-        </Text>
-
-        {isLoading ? (
-          <SkeletonLoader height={100} count={3} />
-        ) : championshipLeader ? (
-          <View>
-            {/* Driver Name Card */}
-            <View style={styles.driverNameCard}>
-              <Text variant="titleMedium" style={styles.driverName}>
+      <SectionHeader title="Championship Leader" />
+      {isLoading ? (
+        <Skeleton height={100} count={3} />
+      ) : championshipLeader ? (
+        <SurfaceCard>
+          <View style={styles.leaderRow}>
+            <DriverBadge
+              code={
+                championshipLeader.driver.code ||
+                championshipLeader.driver.familyName.slice(0, 3).toUpperCase()
+              }
+              teamColor={getTeamColor(championshipLeader.constructors[0]?.name ?? '')}
+            />
+            <View style={styles.leaderInfo}>
+              <Text style={styles.driverName}>
                 {championshipLeader.driver.givenName} {championshipLeader.driver.familyName}
               </Text>
-              <Text variant="bodyMedium" style={styles.driverTeam}>
-                {championshipLeader.constructors[0]?.name || 'Team TBD'}
+              <Text style={styles.driverTeam}>
+                {championshipLeader.constructors[0]?.name ?? 'Team TBD'}
               </Text>
             </View>
-
-            {/* Stats Grid */}
-            <View style={styles.statsGrid}>
-              <StatCard
-                label="Position"
-                value={formatPosition(championshipLeader.position)}
-                icon="trophy"
-                variant="success"
-              />
-              <StatCard
-                label="Points"
-                value={formatPoints(championshipLeader.points)}
-                icon="star"
-                variant="default"
-              />
-              <StatCard
-                label="Wins"
-                value={championshipLeader.wins}
-                icon="flag-checkered"
-                variant="warning"
-              />
-            </View>
           </View>
-        ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>No standings available</Text>
+          <View style={styles.statsGrid}>
+            <StatCard label="Position" value={formatPosition(championshipLeader.position)} accent />
+            <StatCard label="Points" value={formatPoints(championshipLeader.points)} />
+            <StatCard label="Wins" value={championshipLeader.wins} />
           </View>
-        )}
-      </View>
+        </SurfaceCard>
+      ) : (
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateText}>No standings available</Text>
+        </View>
+      )}
 
       {/* Footer spacer */}
       <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 4,
   },
   mainTitle: {
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: 26,
+    fontFamily: fontFamily.heading,
     marginBottom: 4,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 13,
   },
   errorContainer: {
     marginHorizontal: 16,
@@ -163,42 +148,37 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#ffebee',
+    backgroundColor: colors.surface,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#d32f2f',
+    borderLeftColor: colors.accent,
   },
   errorText: {
-    color: '#d32f2f',
+    color: colors.accent,
     fontSize: 14,
   },
-  sectionContainer: {
-    marginVertical: 16,
+  leaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  sectionTitle: {
-    fontWeight: 'bold',
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  driverNameCard: {
-    marginHorizontal: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    marginBottom: 12,
+  leaderInfo: {
+    flex: 1,
   },
   driverName: {
-    fontWeight: 'bold',
-    marginBottom: 4,
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fontFamily.bodySemi,
   },
   driverTeam: {
-    color: '#666',
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
   },
   statsGrid: {
     flexDirection: 'row',
-    marginHorizontal: 12,
     gap: 8,
+    marginTop: 12,
   },
   emptyStateContainer: {
     marginHorizontal: 16,
@@ -207,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
   },
   footer: {
