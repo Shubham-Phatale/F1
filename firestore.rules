@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User profiles (Phase 3A)
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Race predictions (Phase 3B)
+    // Public read so the per-race leaderboard can list scored predictions.
+    // Writes are owner-only: the doc's `uid` must match the caller.
+    match /predictions/{id} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Leaderboard (Phase 3B) — one doc per user, owner-only writes.
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
