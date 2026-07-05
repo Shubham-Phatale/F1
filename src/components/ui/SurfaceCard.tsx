@@ -12,7 +12,7 @@ export const SurfaceCard: React.FC<Props> = ({ children, style, accentColor }) =
   <View
     style={[
       styles.card,
-      accentColor ? { borderLeftWidth: 3, borderLeftColor: accentColor } : null,
+      accentColor ? { borderLeftWidth: 4, borderLeftColor: accentColor } : null,
       style,
     ]}
   >
@@ -23,14 +23,11 @@ export const SurfaceCard: React.FC<Props> = ({ children, style, accentColor }) =
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    padding: 20,
     marginHorizontal: SCREEN_GUTTER,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
   },
 });

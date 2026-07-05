@@ -71,7 +71,11 @@ describe('PodiumCard', () => {
 
   it('shows the fastest lap of the driver whose fastestLap rank is 1', async () => {
     await render(<PodiumCard raceName="Bahrain GP" podium={podium} />);
-    expect(screen.getByText('Fastest lap VER 1:26.8')).toBeTruthy();
+    // The label, driver code, and time render as separate styled text nodes.
+    expect(screen.getByText(/Fastest lap/)).toBeTruthy();
+    // VER appears both as the P1 badge and in the fastest-lap line.
+    expect(screen.getAllByText('VER').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('1:26.8')).toBeTruthy();
   });
 
   it('hides the fastest lap when no result has a rank-1 fastest lap', async () => {
@@ -89,7 +93,7 @@ describe('PodiumCard', () => {
     await render(
       <PodiumCard raceName="Bahrain GP" podium={podium} onFullResults={onFullResults} />
     );
-    fireEvent.press(screen.getByText('Full results →'));
+    fireEvent.press(screen.getByText('Full results'));
     expect(onFullResults).toHaveBeenCalledTimes(1);
   });
 

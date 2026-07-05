@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Race } from '@/types';
 import { SurfaceCard, FlagChip } from '@/components/ui';
-import { colors, fontFamily, radii, typeScale } from '@/theme';
+import { colors, fontFamily } from '@/theme';
 import { getRaceLockTime } from '@/utils/predictionRules';
 
 interface Props {
@@ -35,8 +34,12 @@ function computeRemaining(target: number, now: number): Remaining | null {
   };
 }
 
-const Column: React.FC<{ value: number; label: string }> = ({ value, label }) => (
-  <View style={styles.column}>
+const Column: React.FC<{ value: number; label: string; divider: boolean }> = ({
+  value,
+  label,
+  divider,
+}) => (
+  <View style={[styles.column, divider && styles.columnDivider]}>
     <Text style={styles.columnValue}>{String(value).padStart(2, '0')}</Text>
     <Text style={styles.columnLabel}>{label}</Text>
   </View>
@@ -57,7 +60,7 @@ const SecondsColumn: React.FC<{ value: number; label: string }> = ({ value, labe
   }));
 
   return (
-    <View style={styles.column}>
+    <View style={[styles.column, styles.columnDivider]}>
       <Animated.Text style={[styles.columnValue, animatedStyle]}>
         {String(value).padStart(2, '0')}
       </Animated.Text>
@@ -65,8 +68,6 @@ const SecondsColumn: React.FC<{ value: number; label: string }> = ({ value, labe
     </View>
   );
 };
-
-const Divider: React.FC = () => <View style={styles.divider} />;
 
 export const NextRaceCard: React.FC<Props> = ({ race }) => {
   const lockTime = getRaceLockTime(race.date, race.time);
@@ -85,31 +86,21 @@ export const NextRaceCard: React.FC<Props> = ({ race }) => {
 
   return (
     <SurfaceCard accentColor={colors.accent}>
-      <View style={styles.gradientClip} pointerEvents="none">
-        <LinearGradient
-          colors={['#2a0e17', colors.surface]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </View>
-
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
           <Text style={styles.raceName}>{race.raceName}</Text>
-          <Text style={styles.circuit}>{race.circuit?.circuitName ?? 'Circuit TBD'}</Text>
+          {race.circuit?.circuitName ? (
+            <Text style={styles.circuit}>{race.circuit.circuitName}</Text>
+          ) : null}
         </View>
-        {country ? <FlagChip country={country} width={34} showCode /> : null}
+        {country ? <FlagChip country={country} width={40} /> : null}
       </View>
 
       {remaining ? (
         <View style={styles.countdownPanel}>
-          <Column value={remaining.days} label="DAYS" />
-          <Divider />
-          <Column value={remaining.hours} label="HRS" />
-          <Divider />
-          <Column value={remaining.mins} label="MIN" />
-          <Divider />
+          <Column value={remaining.days} label="DAYS" divider={false} />
+          <Column value={remaining.hours} label="HRS" divider />
+          <Column value={remaining.mins} label="MIN" divider />
           <SecondsColumn value={remaining.secs} label="SEC" />
         </View>
       ) : (
@@ -123,63 +114,59 @@ export const NextRaceCard: React.FC<Props> = ({ race }) => {
 };
 
 const styles = StyleSheet.create({
-  gradientClip: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
   },
   headerText: {
     flex: 1,
   },
   raceName: {
-    ...typeScale.h2,
     color: colors.textPrimary,
+    fontSize: 19,
+    fontFamily: fontFamily.heading,
+    letterSpacing: -0.2,
   },
   circuit: {
     color: colors.textSecondary,
     fontSize: 13,
     fontFamily: fontFamily.body,
-    marginTop: 2,
+    marginTop: 4,
   },
   countdownPanel: {
     flexDirection: 'row',
-    alignItems: 'stretch',
     backgroundColor: colors.surfaceRaised,
-    borderRadius: radii.md,
-    paddingVertical: 12,
-    marginTop: 14,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 16,
   },
   column: {
     flex: 1,
+    paddingVertical: 16,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  columnDivider: {
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border,
   },
   columnValue: {
     color: colors.textPrimary,
     fontSize: 30,
+    lineHeight: 30,
     fontFamily: fontFamily.mono,
   },
   columnLabel: {
     color: colors.textMuted,
     fontSize: 10,
     fontFamily: fontFamily.bodySemi,
-    letterSpacing: 1,
-    marginTop: 4,
-  },
-  divider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
-    marginVertical: 4,
-    backgroundColor: colors.lineStrong,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    marginTop: 7,
   },
   liveRow: {
-    marginTop: 14,
+    marginTop: 16,
     alignItems: 'center',
   },
   liveTitle: {

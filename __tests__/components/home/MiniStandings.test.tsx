@@ -36,6 +36,6 @@ describe('MiniStandings', () => {
       <MiniStandings title="Drivers Championship" rows={rows} onViewAll={() => {}} />
     );
 
-    expect(screen.getByText('View all →')).toBeTruthy();
+    expect(screen.getByText('View all')).toBeTruthy();
   });
 });

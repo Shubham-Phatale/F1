@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { RaceResult } from '@/types';
 import { SurfaceCard, FlagChip, DriverBadge } from '@/components/ui';
-import { colors, fontFamily, radii, typeScale, getTeamColor } from '@/theme';
+import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface Props {
   raceName: string;
@@ -14,15 +14,21 @@ interface Props {
   onFullResults?: () => void;
 }
 
-type PodiumColor = string;
-
 const STEP_HEIGHT: Record<string, number> = { '1': 58, '2': 42, '3': 30 };
-const BADGE_SIZE: Record<string, number> = { '1': 52, '2': 46, '3': 46 };
+const BADGE_SIZE: Record<string, number> = { '1': 60, '2': 52, '3': 52 };
 
-function podiumColor(position: string): PodiumColor {
+function podiumColor(position: string): string {
   if (position === '1') return colors.podiumGold;
   if (position === '2') return colors.podiumSilver;
   return colors.podiumBronze;
+}
+
+/** Vertical gradient stops for a podium step by position. */
+function stepGradient(position: string): [string, string] {
+  const color = podiumColor(position);
+  const top = position === '1' ? 0.2 : 0.16;
+  const bottom = position === '1' ? 0.03 : 0.02;
+  return [withAlpha(color, top), withAlpha(color, bottom)];
 }
 
 /** Convert a #rrggbb color to an rgba() string at the given alpha. */
@@ -34,39 +40,35 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const PodiumStep: React.FC<{ result: RaceResult }> = ({ result }) => {
+const PodiumColumn: React.FC<{ result: RaceResult }> = ({ result }) => {
   const isFirst = result.position === '1';
   const teamColor = getTeamColor(result.constructor.name);
   const code = result.driver.code || result.driver.familyName.slice(0, 3).toUpperCase();
   const accent = podiumColor(result.position);
   const height = STEP_HEIGHT[result.position] ?? 30;
-  const badgeSize = BADGE_SIZE[result.position] ?? 46;
+  const badgeSize = BADGE_SIZE[result.position] ?? 52;
 
   return (
-    <View style={[styles.column, isFirst && styles.columnFirst]}>
-      <View style={styles.driverBlock}>
-        {isFirst ? (
-          <Ionicons name="trophy" size={16} color={colors.podiumGold} style={styles.crown} />
-        ) : null}
-        <View style={isFirst ? styles.badgeGlow : undefined}>
-          <DriverBadge code={code} teamColor={teamColor} size={badgeSize} />
-        </View>
-        <Text style={styles.familyName} numberOfLines={1}>
-          {result.driver.familyName}
-        </Text>
-        <Text style={styles.teamName} numberOfLines={1}>
-          {result.constructor.name}
-        </Text>
-      </View>
+    <View style={styles.column}>
+      {isFirst ? (
+        <MaterialCommunityIcons name="crown" size={18} color={colors.podiumGold} />
+      ) : null}
+      <DriverBadge code={code} teamColor={teamColor} size={badgeSize} />
+      <Text style={styles.familyName} numberOfLines={1}>
+        {result.driver.familyName}
+      </Text>
+      <Text style={styles.teamName} numberOfLines={1}>
+        {result.constructor.name}
+      </Text>
 
-      <View style={[styles.step, { height }, isFirst && styles.stepFirstGlow]}>
-        <View style={[styles.stepAccent, { backgroundColor: accent }]} />
+      <View style={[styles.step, { height }]}>
         <LinearGradient
-          colors={[withAlpha(accent, 0.28), withAlpha(accent, 0)]}
+          colors={stepGradient(result.position)}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
+        <View style={[styles.stepAccent, { backgroundColor: accent }]} />
         <Text style={[styles.rank, { color: accent }]}>{result.position}</Text>
       </View>
     </View>
@@ -94,6 +96,7 @@ export const PodiumCard: React.FC<Props> = ({
     ? fastest.driver.code || fastest.driver.familyName.slice(0, 3).toUpperCase()
     : null;
   const fastestTime = fastest?.fastestLap?.time?.time;
+  const hasFastest = Boolean(fastest && fastestTime);
 
   return (
     <SurfaceCard>
@@ -108,32 +111,35 @@ export const PodiumCard: React.FC<Props> = ({
             </Text>
           ) : null}
         </View>
-        {country ? <FlagChip country={country} width={34} /> : null}
+        {country ? <FlagChip country={country} width={40} /> : null}
       </View>
 
       <View style={styles.podiumRow}>
         {displayOrder.map(result => (
-          <PodiumStep key={result.position} result={result} />
+          <PodiumColumn key={result.position} result={result} />
         ))}
       </View>
 
-      {(fastest && fastestTime) || onFullResults ? (
+      {hasFastest || onFullResults ? (
         <>
           <View style={styles.footerDivider} />
           <View style={styles.footerRow}>
-            {fastest && fastestTime ? (
+            {hasFastest ? (
               <View style={styles.fastestLap}>
-                <Ionicons name="timer-outline" size={14} color={colors.textSecondary} />
+                <MaterialIcons name="timer" size={16} color={colors.textSecondary} />
                 <Text style={styles.fastestText}>
-                  Fastest lap {fastestCode} {fastestTime}
+                  Fastest lap{' '}
+                  <Text style={styles.fastestCode}>{fastestCode}</Text>{' '}
+                  <Text style={styles.fastestTime}>{fastestTime}</Text>
                 </Text>
               </View>
             ) : (
               <View />
             )}
             {onFullResults ? (
-              <Pressable onPress={onFullResults} hitSlop={8}>
-                <Text style={styles.fullResults}>Full results →</Text>
+              <Pressable onPress={onFullResults} hitSlop={8} style={styles.fullResultsBtn}>
+                <Text style={styles.fullResults}>Full results</Text>
+                <MaterialIcons name="arrow-forward" size={15} color={colors.accent} />
               </Pressable>
             ) : null}
           </View>
@@ -148,113 +154,105 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 16,
+    gap: 12,
   },
   headerText: {
     flex: 1,
   },
   raceName: {
-    ...typeScale.h2,
     color: colors.textPrimary,
+    fontSize: 19,
+    fontFamily: fontFamily.heading,
+    letterSpacing: -0.2,
   },
   roundLabel: {
     color: colors.textSecondary,
     fontSize: 12,
     fontFamily: fontFamily.body,
-    marginTop: 2,
+    marginTop: 3,
   },
   podiumRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     alignItems: 'flex-end',
+    marginTop: 18,
   },
   column: {
     flex: 1,
     alignItems: 'center',
-  },
-  columnFirst: {
-    marginBottom: 0,
-  },
-  driverBlock: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  crown: {
-    marginBottom: 2,
-  },
-  badgeGlow: {
-    shadowColor: colors.podiumGold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 12,
-    elevation: 10,
+    gap: 6,
   },
   familyName: {
     color: colors.textPrimary,
     fontSize: 13,
-    fontFamily: fontFamily.bodySemi,
+    fontFamily: fontFamily.heading,
     textAlign: 'center',
-    marginTop: 8,
   },
   teamName: {
     color: colors.textSecondary,
     fontSize: 11,
     fontFamily: fontFamily.body,
     textAlign: 'center',
-    marginTop: 2,
   },
   step: {
-    alignSelf: 'stretch',
-    borderTopLeftRadius: radii.sm,
-    borderTopRightRadius: radii.sm,
-    backgroundColor: colors.surfaceRaised,
+    width: '100%',
+    borderTopLeftRadius: 11,
+    borderTopRightRadius: 11,
+    marginTop: 6,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepFirstGlow: {
-    shadowColor: colors.podiumGold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
-  },
   stepAccent: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    left: 14,
+    right: 14,
     height: 3,
+    borderRadius: 2,
   },
   rank: {
-    fontSize: 22,
+    fontSize: 19,
     fontFamily: fontFamily.mono,
   },
   footerDivider: {
     height: 1,
     backgroundColor: colors.border,
-    marginTop: 16,
-    marginBottom: 12,
+    marginTop: 18,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 14,
   },
   fastestLap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flex: 1,
   },
   fastestText: {
     color: colors.textSecondary,
     fontSize: 12,
+    fontFamily: fontFamily.body,
+  },
+  fastestCode: {
+    color: colors.textPrimary,
+    fontFamily: fontFamily.bodySemi,
+  },
+  fastestTime: {
+    color: colors.textPrimary,
     fontFamily: fontFamily.mono,
+  },
+  fullResultsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   fullResults: {
     color: colors.accent,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: fontFamily.bodySemi,
   },
 });

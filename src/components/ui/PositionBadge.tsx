@@ -1,38 +1,40 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '@/theme';
+import { colors, fontFamily } from '@/theme';
 
 interface Props {
   position: string | number;
 }
 
-function podiumColor(pos: number): string {
-  if (pos === 1) return colors.podiumGold;
-  if (pos === 2) return colors.podiumSilver;
-  if (pos === 3) return colors.podiumBronze;
-  return colors.surfaceRaised;
+interface Medal {
+  bg: string;
+  text: string;
+}
+
+function medal(pos: number): Medal {
+  if (pos === 1) return { bg: colors.podiumGold, text: '#3a2c00' };
+  if (pos === 2) return { bg: colors.podiumSilver, text: '#26262b' };
+  if (pos === 3) return { bg: colors.podiumBronze, text: '#2a1400' };
+  return { bg: colors.tile, text: colors.textSecondary };
 }
 
 export const PositionBadge: React.FC<Props> = ({ position }) => {
   const num = parseInt(String(position), 10);
-  const isPodium = num >= 1 && num <= 3;
-  const bg = podiumColor(num);
+  const { bg, text } = medal(num);
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.text, { color: isPodium ? '#1a1400' : colors.textPrimary }]}>
-        {position}
-      </Text>
+      <Text style={[styles.text, { color: text }]}>{position}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   badge: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: { fontWeight: '800', fontSize: 12 },
+  text: { fontFamily: fontFamily.mono, fontSize: 14 },
 });

@@ -207,16 +207,18 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     color: colors.textPrimary,
-    fontSize: 32,
+    fontSize: 34,
+    lineHeight: 34,
+    letterSpacing: -0.5,
     fontFamily: fontFamily.display,
-    marginBottom: 4,
   },
   subtitle: {
     color: colors.textMuted,
     fontSize: 11,
     fontFamily: fontFamily.bodySemi,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
+    marginTop: 6,
   },
   errorContainer: {
     marginHorizontal: 16,
