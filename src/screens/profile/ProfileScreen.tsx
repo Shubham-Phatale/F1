@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, Button, TextInput, Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,8 @@ import { RootStackParamList } from '@/navigation/types';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { setUser, clearAuth } from '@/redux/slices/authSlice';
 import { firebaseService } from '@/services/firebaseService';
-import StatCard from '@/components/race/StatCard';
+import { ScreenContainer, SurfaceCard, DriverBadge } from '@/components/ui';
+import { colors, fontFamily, getTeamColor } from '@/theme';
 
 type ProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,6 +24,13 @@ function formatJoined(iso: string): string {
     month: 'long',
     day: 'numeric',
   });
+}
+
+// Derive avatar initials from a display name (first 2-3 chars uppercased).
+function toInitials(name: string | null | undefined): string {
+  const trimmed = (name ?? '').trim();
+  if (!trimmed) return 'F1';
+  return trimmed.slice(0, 3).toUpperCase();
 }
 
 const ProfileScreen: React.FC = () => {
@@ -41,7 +49,7 @@ const ProfileScreen: React.FC = () => {
   // available elsewhere; only this screen gates on auth.
   if (!user) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScreenContainer scroll>
         <View style={styles.promptContainer}>
           <Text variant="headlineMedium" style={styles.title}>
             Your Profile
@@ -53,18 +61,21 @@ const ProfileScreen: React.FC = () => {
           <Button
             mode="contained"
             onPress={() => navigation.navigate('Login')}
+            buttonColor={colors.accent}
             style={styles.primaryButton}
           >
             Log In
           </Button>
           <View style={styles.registerRow}>
-            <Text variant="bodyMedium">New here?</Text>
+            <Text variant="bodyMedium" style={styles.mutedText}>
+              New here?
+            </Text>
             <Button mode="text" onPress={() => navigation.navigate('Register')}>
               Sign Up
             </Button>
           </View>
         </View>
-      </ScrollView>
+      </ScreenContainer>
     );
   }
 
@@ -110,25 +121,29 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const teamColor = getTeamColor(user.favoriteConstructorId ?? '');
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          {user.displayName || 'Your Profile'}
-        </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          {user.email}
-        </Text>
-      </View>
-
-      <View style={styles.statsRow}>
-        <StatCard label="Joined" value={formatJoined(user.joinedAt)} icon="calendar" />
-      </View>
-
-      <Divider style={styles.divider} />
+    <ScreenContainer scroll>
+      <SurfaceCard style={styles.headerCard}>
+        <View style={styles.headerRow}>
+          <DriverBadge code={toInitials(user.displayName)} teamColor={teamColor} size={56} />
+          <View style={styles.headerText}>
+            <Text variant="headlineSmall" style={styles.title}>
+              {user.displayName || 'Your Profile'}
+            </Text>
+            <Text variant="bodyMedium" style={styles.subtitle}>
+              {user.email}
+            </Text>
+            <Text variant="bodySmall" style={styles.joined}>
+              Joined {formatJoined(user.joinedAt)}
+            </Text>
+          </View>
+        </View>
+      </SurfaceCard>
 
       {editing ? (
-        <View style={styles.section}>
+        <SurfaceCard>
           <TextInput
             label="Display Name"
             value={displayName}
@@ -164,14 +179,15 @@ const ProfileScreen: React.FC = () => {
               onPress={handleSave}
               loading={saving}
               disabled={saving}
+              buttonColor={colors.accent}
               style={styles.flexButton}
             >
               Save
             </Button>
           </View>
-        </View>
+        </SurfaceCard>
       ) : (
-        <View style={styles.section}>
+        <SurfaceCard>
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Bio
           </Text>
@@ -182,12 +198,18 @@ const ProfileScreen: React.FC = () => {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Favorites
           </Text>
-          <Text variant="bodyMedium" style={styles.bodyText}>
-            Favorite Driver: {user.favoriteDriverId || 'Not set'}
-          </Text>
-          <Text variant="bodyMedium" style={styles.bodyText}>
-            Favorite Team: {user.favoriteConstructorId || 'Not set'}
-          </Text>
+          <View style={styles.favoriteRow}>
+            <View style={[styles.teamDot, { backgroundColor: teamColor }]} />
+            <Text variant="bodyMedium" style={styles.bodyText}>
+              Favorite Driver: {user.favoriteDriverId || 'Not set'}
+            </Text>
+          </View>
+          <View style={styles.favoriteRow}>
+            <View style={[styles.teamDot, { backgroundColor: teamColor }]} />
+            <Text variant="bodyMedium" style={styles.bodyText}>
+              Favorite Team: {user.favoriteConstructorId || 'Not set'}
+            </Text>
+          </View>
 
           {errorMessage && (
             <Text variant="bodySmall" style={styles.errorText}>
@@ -198,12 +220,18 @@ const ProfileScreen: React.FC = () => {
           <Button mode="outlined" onPress={startEditing} style={styles.editButton}>
             Edit Profile
           </Button>
-        </View>
+        </SurfaceCard>
       )}
 
-      <Divider style={styles.divider} />
-
-      <View style={styles.section}>
+      <SurfaceCard>
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('About')}
+          textColor={colors.textSecondary}
+        >
+          About & Credits
+        </Button>
+        <Divider style={styles.divider} />
         <Button
           mode="contained-tonal"
           onPress={handleLogout}
@@ -212,55 +240,64 @@ const ProfileScreen: React.FC = () => {
         >
           Log Out
         </Button>
-      </View>
+      </SurfaceCard>
 
       <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  headerCard: {
+    marginTop: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerText: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    paddingVertical: 16,
-  },
-  header: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    marginLeft: 14,
   },
   title: {
-    fontWeight: 'bold',
+    fontFamily: fontFamily.heading,
+    color: colors.textPrimary,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  joined: {
+    color: colors.textMuted,
     marginTop: 4,
   },
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-  },
   divider: {
-    marginVertical: 12,
-  },
-  section: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
+    marginVertical: 8,
+    backgroundColor: colors.border,
   },
   sectionTitle: {
-    fontWeight: 'bold',
+    fontFamily: fontFamily.bodySemi,
+    color: colors.textPrimary,
     marginTop: 12,
     marginBottom: 4,
   },
   bodyText: {
-    color: '#333',
+    color: colors.textSecondary,
     marginBottom: 4,
+  },
+  favoriteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  teamDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
   },
   input: {
     marginBottom: 12,
-    backgroundColor: '#fff',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -275,8 +312,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   errorText: {
-    color: '#c62828',
+    color: colors.accent,
     marginBottom: 8,
+  },
+  mutedText: {
+    color: colors.textSecondary,
   },
   promptContainer: {
     paddingHorizontal: 24,
@@ -284,7 +324,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   promptText: {
-    color: '#666',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 12,
     marginBottom: 24,

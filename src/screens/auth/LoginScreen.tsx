@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,8 @@ import { setUser, setAuthStatus, setAuthError } from '@/redux/slices/authSlice';
 import { firebaseService } from '@/services/firebaseService';
 import type { UserProfile } from '@/types';
 import AuthForm, { AuthFormValues } from '@/components/auth/AuthForm';
+import { ScreenContainer } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -72,7 +74,11 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenContainer scroll>
+      <View style={styles.wordmarkWrap}>
+        <Text style={styles.wordmark}>F1·LIVE</Text>
+      </View>
+
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.title}>
           Welcome Back
@@ -90,22 +96,32 @@ const LoginScreen: React.FC = () => {
       />
 
       <View style={styles.footer}>
-        <Text variant="bodyMedium">Don't have an account?</Text>
+        <Text variant="bodyMedium" style={styles.footerText}>
+          Don't have an account?
+        </Text>
         <Button mode="text" onPress={() => navigation.navigate('Register')}>
           Sign Up
         </Button>
       </View>
-    </ScrollView>
+
+      <Text style={styles.disclaimer}>
+        Unofficial · Not affiliated with Formula 1
+      </Text>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+  wordmarkWrap: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 8,
   },
-  content: {
-    paddingVertical: 24,
+  wordmark: {
+    color: colors.accent,
+    fontSize: 28,
+    fontFamily: fontFamily.heading,
+    letterSpacing: 1,
   },
   header: {
     paddingHorizontal: 16,
@@ -113,9 +129,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
+    color: colors.textPrimary,
   },
   subtitle: {
-    color: '#666',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   footer: {
@@ -123,6 +140,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+  },
+  footerText: {
+    color: colors.textSecondary,
+  },
+  disclaimer: {
+    color: colors.textMuted,
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 16,
   },
 });
 

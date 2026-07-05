@@ -22,4 +22,5 @@ export type RootStackParamList = {
   ConstructorAnalysis: { constructorId: string };
   Login: undefined;
   Register: undefined;
+  About: undefined;
 };

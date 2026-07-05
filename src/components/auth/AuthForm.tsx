@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, HelperText, Text } from 'react-native-paper';
+import { colors } from '@/theme/colors';
 
 export type AuthMode = 'login' | 'register';
 
@@ -134,6 +135,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onSubmit, loading = false, er
         loading={loading}
         disabled={!isValid || loading}
         style={styles.submit}
+        buttonColor={colors.accent}
         testID="auth-submit-button"
       >
         {isRegister ? 'Sign Up' : 'Log In'}
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   serverError: {
-    color: '#b00020',
+    color: colors.accent,
     marginTop: 4,
     marginBottom: 8,
   },
