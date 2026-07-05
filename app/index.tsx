@@ -16,10 +16,10 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
 } from '@expo-google-fonts/inter';
-import {
-  JetBrainsMono_600SemiBold,
-  JetBrainsMono_700Bold,
-} from '@expo-google-fonts/jetbrains-mono';
+// NOTE: import the two JetBrains Mono weights directly (not via the package
+// barrel). The barrel `index.js` requires every variant including italics, and a
+// missing italic .ttf breaks Metro resolution. Direct requires bundle only what
+// we use and avoid that fragility.
 import { appTheme } from '@/theme';
 import { store, persistor } from '@/redux/store';
 import { RootNavigator } from '@/navigation/RootNavigator';
@@ -75,8 +75,8 @@ const App: React.FC = () => {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
-    JetBrainsMono_600SemiBold,
-    JetBrainsMono_700Bold,
+    JetBrainsMono_600SemiBold: require('@expo-google-fonts/jetbrains-mono/600SemiBold/JetBrainsMono_600SemiBold.ttf'),
+    JetBrainsMono_700Bold: require('@expo-google-fonts/jetbrains-mono/700Bold/JetBrainsMono_700Bold.ttf'),
   });
 
   useEffect(() => {

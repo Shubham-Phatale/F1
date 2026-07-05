@@ -14,7 +14,7 @@ interface Props {
   onFullResults?: () => void;
 }
 
-type PodiumColor = typeof colors.podiumGold;
+type PodiumColor = string;
 
 const STEP_HEIGHT: Record<string, number> = { '1': 58, '2': 42, '3': 30 };
 const BADGE_SIZE: Record<string, number> = { '1': 52, '2': 46, '3': 46 };
