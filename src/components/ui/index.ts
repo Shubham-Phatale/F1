@@ -10,3 +10,5 @@ export { PositionBadge } from './PositionBadge';
 export { SmartImage } from './SmartImage';
 export { Skeleton } from './Skeleton';
 export { StatCard } from './StatCard';
+export { Reveal } from './Reveal';
+export { PressableScale } from './PressableScale';

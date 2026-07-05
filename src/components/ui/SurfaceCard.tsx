@@ -27,5 +27,10 @@ const styles = StyleSheet.create({
     padding: 14,
     marginHorizontal: SCREEN_GUTTER,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
