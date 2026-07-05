@@ -6,6 +6,7 @@ import { colors } from '@/theme';
 import HomeScreen from '@/screens/home/HomeScreen';
 import CalendarScreen from '@/screens/calendar/CalendarScreen';
 import StandingsScreen from '@/screens/standings/StandingsScreen';
+import PredictScreen from '@/screens/predict/PredictScreen';
 import ProfileScreen from '@/screens/profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
@@ -29,6 +30,8 @@ export const HomeNavigator: React.FC = () => {
             iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Standings') {
             iconName = focused ? 'trophy' : 'trophy-outline';
+          } else if (route.name === 'Predict') {
+            iconName = focused ? 'flag' : 'flag-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -61,6 +64,13 @@ export const HomeNavigator: React.FC = () => {
         component={StandingsScreen}
         options={{
           title: 'Standings',
+        }}
+      />
+      <Tab.Screen
+        name="Predict"
+        component={PredictScreen}
+        options={{
+          title: 'Predict',
         }}
       />
       <Tab.Screen

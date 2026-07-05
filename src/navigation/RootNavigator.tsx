@@ -11,6 +11,8 @@ import ConstructorAnalysisScreen from '@/screens/constructor-analysis/Constructo
 import LoginScreen from '@/screens/auth/LoginScreen';
 import RegisterScreen from '@/screens/auth/RegisterScreen';
 import AboutScreen from '@/screens/about/AboutScreen';
+import MakePredictionScreen from '@/screens/predict/MakePredictionScreen';
+import LeaderboardScreen from '@/screens/leaderboard/LeaderboardScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -83,6 +85,22 @@ export const RootNavigator: React.FC = () => {
           options={{
             headerShown: false,
             title: 'About',
+          }}
+        />
+        <Stack.Screen
+          name="MakePrediction"
+          component={MakePredictionScreen}
+          options={{
+            headerShown: false,
+            title: 'Make Prediction',
+          }}
+        />
+        <Stack.Screen
+          name="Leaderboard"
+          component={LeaderboardScreen}
+          options={{
+            headerShown: false,
+            title: 'Leaderboard',
           }}
         />
       </Stack.Navigator>

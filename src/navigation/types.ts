@@ -5,6 +5,7 @@ export type HomeTabParamList = {
   HomeScreen: undefined;
   Calendar: undefined;
   Standings: undefined;
+  Predict: undefined;
   Profile: undefined;
   RaceDetails: {
     raceId: string;
