@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
-import { Text, Divider } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { DriverStanding } from '../../types';
-import { formatPosition, formatDriverName, formatPoints } from '../../utils/formatters';
+import { formatDriverName, formatPoints } from '../../utils/formatters';
+import { PositionBadge, DriverBadge } from '@/components/ui';
+import { colors, fontFamily, getTeamColor } from '@/theme';
 
 interface DriverRowProps {
   standing: DriverStanding;
@@ -11,15 +13,17 @@ interface DriverRowProps {
 }
 
 const DriverRow: React.FC<DriverRowProps> = ({ standing, index, onPress }) => {
+  const teamName = standing.constructors[0]?.name ?? '';
+  const teamColor = getTeamColor(teamName);
+  const code =
+    standing.driver.code || standing.driver.familyName.slice(0, 3).toUpperCase();
+
   return (
     <>
       <Pressable style={styles.row} onPress={onPress} disabled={!onPress}>
-        {/* Position */}
-        <View style={styles.positionContainer}>
-          <Text variant="bodyMedium" style={styles.position}>
-            {formatPosition(standing.position)}
-          </Text>
-        </View>
+        <PositionBadge position={standing.position} />
+
+        <DriverBadge code={code} teamColor={teamColor} size={40} />
 
         {/* Driver Info */}
         <View style={styles.driverInfo}>
@@ -33,29 +37,19 @@ const DriverRow: React.FC<DriverRowProps> = ({ standing, index, onPress }) => {
           )}
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text variant="labelSmall" style={styles.statLabel}>
-              W
-            </Text>
-            <Text variant="bodyMedium" style={styles.statValue}>
-              {standing.wins}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text variant="labelSmall" style={styles.statLabel}>
-              Pts
-            </Text>
-            <Text variant="bodyMedium" style={styles.statValue}>
-              {formatPoints(standing.points)}
-            </Text>
-          </View>
+        {/* Points */}
+        <View style={styles.pointsContainer}>
+          <Text variant="bodyMedium" style={styles.points}>
+            {formatPoints(standing.points)}
+          </Text>
+          <Text variant="labelSmall" style={styles.pointsLabel}>
+            PTS
+          </Text>
         </View>
       </Pressable>
 
       {/* Divider - only if not the last item */}
-      {index < 19 && <Divider />}
+      {index < 19 && <View style={styles.divider} />}
     </>
   );
 };
@@ -68,38 +62,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  positionContainer: {
-    width: 40,
-    alignItems: 'center',
-  },
-  position: {
-    fontWeight: 'bold',
-  },
   driverInfo: {
     flex: 1,
   },
   driverName: {
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  constructorName: {
-    color: '#666',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-    minWidth: 35,
-  },
-  statLabel: {
-    color: '#666',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.bodySemi,
     marginBottom: 2,
   },
-  statValue: {
-    fontWeight: '500',
+  constructorName: {
+    color: colors.textSecondary,
+    fontFamily: fontFamily.body,
+  },
+  pointsContainer: {
+    alignItems: 'flex-end',
+    minWidth: 48,
+  },
+  points: {
+    color: colors.textPrimary,
+    fontFamily: fontFamily.heading,
+    fontSize: 16,
+  },
+  pointsLabel: {
+    color: colors.textMuted,
+    letterSpacing: 1,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginHorizontal: 16,
   },
 });
 

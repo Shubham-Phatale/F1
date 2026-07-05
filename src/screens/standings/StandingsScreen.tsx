@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, SegmentedButtons, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,7 +8,8 @@ import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchStandings } from '@/redux/slices/standingsSlice';
 import DriverRow from '@/components/race/DriverRow';
 import ConstructorRow from '@/components/race/ConstructorRow';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import { ScreenContainer, Skeleton } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 type StandingsType = 'drivers' | 'constructors';
 
@@ -37,7 +38,7 @@ const StandingsScreen: React.FC = () => {
   }, [selectedSeason, dispatch]);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
       {/* Header */}
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.title}>
@@ -66,7 +67,7 @@ const StandingsScreen: React.FC = () => {
       </View>
 
       {/* Loading State */}
-      {loading && <SkeletonLoader height={60} count={5} />}
+      {loading && <Skeleton height={60} count={5} />}
 
       {/* Drivers Standings */}
       {!loading && standingsType === 'drivers' && (
@@ -118,22 +119,19 @@ const StandingsScreen: React.FC = () => {
 
       {/* Footer spacer */}
       <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
   },
   title: {
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.heading,
   },
   compareButton: {
     marginTop: 12,
@@ -152,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
   },
   footer: {

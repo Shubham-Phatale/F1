@@ -3,21 +3,6 @@ import { render, screen } from '@testing-library/react-native';
 import DriverRow from '@/components/race/DriverRow';
 import { DriverStanding } from '@/types';
 
-// Mock react-native-paper components
-jest.mock('react-native-paper', () => {
-  const { Text: RNText } = require('react-native');
-  return {
-    Text: ({
-      children,
-    }: {
-      children: React.ReactNode;
-      variant?: string;
-      style?: any;
-    }) => <RNText>{children}</RNText>,
-    Divider: () => null,
-  };
-});
-
 // Mock formatters
 jest.mock('@/utils/formatters', () => ({
   formatPosition: (position: string) => {
@@ -125,17 +110,11 @@ describe('DriverRow', () => {
     expect(screen.getByText('25')).toBeTruthy();
   });
 
-  it('displays driver wins', async () => {
+  it('displays the position via the position badge', async () => {
     await render(<DriverRow standing={mockStanding} index={0} />);
 
-    expect(screen.getByText('2')).toBeTruthy();
-  });
-
-  it('displays formatted position', async () => {
-    await render(<DriverRow standing={mockStanding} index={0} />);
-
-    // formatPosition will convert '1' to '1st'
-    expect(screen.getByText('1st')).toBeTruthy();
+    // PositionBadge renders the raw position value
+    expect(screen.getByText('1')).toBeTruthy();
   });
 
   it('displays constructor name', async () => {
@@ -144,11 +123,10 @@ describe('DriverRow', () => {
     expect(screen.getByText('Red Bull Racing')).toBeTruthy();
   });
 
-  it('displays stat labels', async () => {
+  it('displays the driver code badge', async () => {
     await render(<DriverRow standing={mockStanding} index={0} />);
 
-    expect(screen.getByText('W')).toBeTruthy();
-    expect(screen.getByText('Pts')).toBeTruthy();
+    expect(screen.getByText('VER')).toBeTruthy();
   });
 
   it('handles standing with no constructors gracefully', async () => {
@@ -175,6 +153,7 @@ describe('DriverRow', () => {
       driver: {
         ...mockStanding.driver,
         driverId: 'charles_leclerc',
+        code: 'LEC',
         givenName: 'Charles',
         familyName: 'Leclerc',
       },
@@ -182,34 +161,25 @@ describe('DriverRow', () => {
 
     await render(<DriverRow standing={secondPlaceStanding} index={1} />);
 
-    expect(screen.getByText('2nd')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
     expect(screen.getByText('Charles Leclerc')).toBeTruthy();
     expect(screen.getByText('18')).toBeTruthy();
-    expect(screen.getByText('0')).toBeTruthy();
   });
 
-  it('handles various position formatting correctly', async () => {
-    const thirdPlaceStanding: DriverStanding = {
+  it('falls back to first 3 letters of family name when code is missing', async () => {
+    const noCodeStanding: DriverStanding = {
       ...mockStanding,
-      position: '3',
-      positionText: '3',
+      driver: {
+        ...mockStanding.driver,
+        code: '',
+        givenName: 'Charles',
+        familyName: 'Leclerc',
+      },
     };
 
-    await render(<DriverRow standing={thirdPlaceStanding} index={2} />);
+    await render(<DriverRow standing={noCodeStanding} index={2} />);
 
-    expect(screen.getByText('3rd')).toBeTruthy();
-  });
-
-  it('handles double-digit positions correctly', async () => {
-    const eleventhPlaceStanding: DriverStanding = {
-      ...mockStanding,
-      position: '11',
-      positionText: '11',
-    };
-
-    await render(<DriverRow standing={eleventhPlaceStanding} index={10} />);
-
-    expect(screen.getByText('11th')).toBeTruthy();
+    expect(screen.getByText('LEC')).toBeTruthy();
   });
 
   it('renders with index prop for divider logic', async () => {
