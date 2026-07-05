@@ -49,8 +49,16 @@ const HomeScreen: React.FC = () => {
   // Determine if loading
   const isLoading = racesLoading || standingsLoading;
 
-  // Get latest race (first race in the list)
-  const latestRace = allRaces && allRaces.length > 0 ? allRaces[0] : null;
+  // Latest race = the most recent race that has already happened (races are
+  // ordered by round ascending). Fall back to the last scheduled race, then the
+  // first, so something always shows.
+  const latestRace = (() => {
+    if (!allRaces || allRaces.length === 0) return null;
+    const now = Date.now();
+    const past = allRaces.filter(r => new Date(r.date).getTime() <= now);
+    if (past.length > 0) return past[past.length - 1];
+    return allRaces[allRaces.length - 1];
+  })();
 
   // Get championship leader (first standing)
   const championshipLeader =

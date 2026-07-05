@@ -100,9 +100,13 @@ export class ErgastService {
         this.withRetry(() => this.api.get<ErgastResponse<any>>(constructorPath)),
       ]);
 
-      const driverList = driverResponse.data.MRData.StandingsTable?.StandingsList?.[0] || {};
+      // Jolpica returns `StandingsLists` (plural); classic Ergast used
+      // `StandingsList` (singular). Support both so standings always populate.
+      const driverTable = driverResponse.data.MRData.StandingsTable ?? {};
+      const constructorTable = constructorResponse.data.MRData.StandingsTable ?? {};
+      const driverList = (driverTable.StandingsLists ?? driverTable.StandingsList ?? [])[0] || {};
       const constructorList =
-        constructorResponse.data.MRData.StandingsTable?.StandingsList?.[0] || {};
+        (constructorTable.StandingsLists ?? constructorTable.StandingsList ?? [])[0] || {};
 
       return {
         season: driverList.season || constructorList.season || season,
@@ -239,9 +243,11 @@ export class ErgastService {
             const response = await this.api.get<ErgastResponse<any>>(
               `/${season}/driverStandings.json`
             );
-            const standings = (
-              response.data.MRData.StandingsTable?.StandingsList?.[0]?.DriverStandings || []
-            ).map((s: any) => this.normalizeDriverStanding(s));
+            const sTable = response.data.MRData.StandingsTable ?? {};
+            const sList = (sTable.StandingsLists ?? sTable.StandingsList ?? [])[0] ?? {};
+            const standings = (sList.DriverStandings || []).map((s: any) =>
+              this.normalizeDriverStanding(s)
+            );
             const entry = standings.find(
               (s: DriverStanding) => s.driver?.driverId === driverId
             );

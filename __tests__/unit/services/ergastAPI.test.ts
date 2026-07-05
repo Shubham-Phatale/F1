@@ -134,7 +134,7 @@ describe('ErgastService', () => {
           StandingsTable: {
             season: '2026',
             round: '12',
-            StandingsList: [
+            StandingsLists: [
               {
                 season: '2026',
                 round: '12',
@@ -176,7 +176,7 @@ describe('ErgastService', () => {
           StandingsTable: {
             season: '2026',
             round: '12',
-            StandingsList: [
+            StandingsLists: [
               {
                 season: '2026',
                 round: '12',
