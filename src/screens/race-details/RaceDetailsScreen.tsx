@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, SegmentedButtons, Divider } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Text, SegmentedButtons } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import {
   fetchRaceResults,
@@ -10,7 +10,8 @@ import {
 import { formatDate } from '@/utils/formatters';
 import ResultsTable from '@/components/race/ResultsTable';
 import LapTimeTable from '@/components/race/LapTimeTable';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import { ScreenContainer, SurfaceCard, Flag, Skeleton } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 type DisplayTab = 'results' | 'qualifying';
 
@@ -51,26 +52,26 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
     dispatch(fetchQualifyingResults({ season, round }));
   }, [raceId, season, round, dispatch]);
 
+  const country = race?.circuit?.location?.country ?? '';
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header Section */}
+    <ScreenContainer>
+      {/* Styled circuit banner */}
       {race && (
-        <>
-          <View style={styles.header}>
-            <Text variant="headlineSmall" style={styles.raceName}>
+        <SurfaceCard accentColor={colors.accent} style={styles.banner}>
+          <View style={styles.bannerTitleRow}>
+            <Text style={styles.raceName} numberOfLines={2}>
               {race.raceName}
             </Text>
-            <Text variant="bodySmall" style={styles.date}>
-              {formatDate(race.date)}
-            </Text>
-            <Text variant="bodySmall" style={styles.location}>
-              {race.circuit?.location
-                ? `${race.circuit.location.locality}, ${race.circuit.location.country}`
-                : 'Location TBD'}
-            </Text>
+            {country ? <Flag country={country} width={28} /> : null}
           </View>
-          <Divider />
-        </>
+          <Text style={styles.location}>
+            {race.circuit?.location
+              ? `${race.circuit.location.locality}, ${race.circuit.location.country}`
+              : 'Location TBD'}
+          </Text>
+          <Text style={styles.date}>{formatDate(race.date)}</Text>
+        </SurfaceCard>
       )}
 
       {/* Tab Selector */}
@@ -87,7 +88,7 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
       </View>
 
       {/* Loading State */}
-      {loading && <SkeletonLoader height={60} count={3} />}
+      {loading && <Skeleton height={60} count={3} />}
 
       {/* Results Tab */}
       {displayTab === 'results' && !loading && (
@@ -114,32 +115,37 @@ const RaceDetailsScreen: React.FC<RaceDetailsScreenProps> = ({ route }) => {
           )}
         </View>
       )}
-
-      {/* Footer spacer */}
-      <View style={styles.footer} />
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+  banner: {
+    marginTop: 12,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  bannerTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
   },
   raceName: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  date: {
-    color: '#666',
-    marginBottom: 4,
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontFamily: fontFamily.heading,
   },
   location: {
-    color: '#999',
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: fontFamily.body,
+    marginTop: 8,
+  },
+  date: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fontFamily.body,
+    marginTop: 4,
   },
   tabSelectorContainer: {
     paddingHorizontal: 16,
@@ -155,11 +161,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
-  },
-  footer: {
-    height: 20,
+    fontFamily: fontFamily.body,
   },
 });
 

@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { Card, Text, Divider } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { QualifyingResult } from '../../types';
-import { formatDriverName, formatPosition } from '../../utils/formatters';
+import { formatDriverName } from '../../utils/formatters';
+import { SurfaceCard, PositionBadge, SectionHeader } from '@/components/ui';
+import { colors, fontFamily } from '@/theme';
 
 interface LapTimeTableProps {
   results: QualifyingResult[];
@@ -10,108 +12,83 @@ interface LapTimeTableProps {
 }
 
 const LapTimeTable: React.FC<LapTimeTableProps> = ({ results, title = 'Qualifying Results' }) => {
-  const renderRow = ({ item, index }: { item: QualifyingResult; index: number }) => {
+  const renderRow = ({ item }: { item: QualifyingResult; index: number }) => {
     // Get best lap time: Q3 > Q2 > Q1
     const bestLapTime = item.q3 || item.q2 || item.q1 || '--:--';
 
     return (
-      <>
-        <View style={styles.row}>
-          {/* Position */}
-          <View style={styles.positionContainer}>
-            <Text variant="bodyMedium" style={styles.position}>
-              {formatPosition(item.position)}
-            </Text>
-          </View>
+      <View style={styles.row}>
+        {/* Position */}
+        <PositionBadge position={item.position} />
 
-          {/* Driver Info */}
-          <View style={styles.driverInfo}>
-            <Text variant="bodyMedium" style={styles.driverName}>
-              {formatDriverName(item.driver.givenName, item.driver.familyName)}
-            </Text>
-            <Text variant="labelSmall" style={styles.teamName}>
-              {item.constructor.name}
-            </Text>
-          </View>
-
-          {/* Best Lap Time */}
-          <View style={styles.timeContainer}>
-            <Text variant="bodyMedium" style={styles.lapTime}>
-              {bestLapTime}
-            </Text>
-          </View>
+        {/* Driver Info */}
+        <View style={styles.driverInfo}>
+          <Text style={styles.driverName} numberOfLines={1}>
+            {formatDriverName(item.driver.givenName, item.driver.familyName)}
+          </Text>
+          <Text style={styles.teamName} numberOfLines={1}>
+            {item.constructor.name}
+          </Text>
         </View>
 
-        {/* Divider - only if not the last item */}
-        {index < results.length - 1 && <Divider />}
-      </>
+        {/* Best Lap Time */}
+        <Text style={styles.lapTime}>{bestLapTime}</Text>
+      </View>
     );
   };
 
   return (
-    <Card style={styles.card}>
-      {/* Card Title */}
-      <Card.Title
-        title={title}
-        titleVariant="titleMedium"
-        style={styles.cardTitle}
-        titleStyle={styles.cardTitleText}
-      />
-
-      <FlatList
-        data={results}
-        renderItem={renderRow}
-        keyExtractor={(_, index) => index.toString()}
-        scrollEnabled={false}
-      />
-    </Card>
+    <View>
+      <SectionHeader title={title} />
+      <SurfaceCard style={styles.card}>
+        <FlatList
+          data={results}
+          renderItem={renderRow}
+          keyExtractor={(_, index) => index.toString()}
+          scrollEnabled={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
+      </SurfaceCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 12,
-    marginBottom: 12,
-  },
-  cardTitle: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  cardTitleText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    padding: 0,
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     alignItems: 'center',
     gap: 12,
-  },
-  positionContainer: {
-    width: 32,
-    alignItems: 'center',
-  },
-  position: {
-    fontWeight: 'bold',
   },
   driverInfo: {
     flex: 1,
   },
   driverName: {
-    fontWeight: 'bold',
-    marginBottom: 4,
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontFamily: fontFamily.bodySemi,
   },
   teamName: {
-    color: '#666',
-  },
-  timeContainer: {
-    alignItems: 'flex-end',
-    minWidth: 70,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fontFamily.body,
+    marginTop: 2,
   },
   lapTime: {
-    color: '#1976d2',
-    fontWeight: 'bold',
+    color: colors.accent,
+    fontSize: 14,
+    fontFamily: fontFamily.heading,
+    minWidth: 70,
+    textAlign: 'right',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.border,
   },
 });
 
