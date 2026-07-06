@@ -16,3 +16,4 @@ export { PressableScale } from './PressableScale';
 export { AnimatedTabIcon } from './AnimatedTabIcon';
 export { SegmentedControl } from './SegmentedControl';
 export { AppButton } from './AppButton';
+export { EmptyState } from './EmptyState';

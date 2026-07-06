@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -12,10 +12,19 @@ import {
 } from '@/redux/slices/predictionsSlice';
 import { predictionService } from '@/services/predictionService';
 import { getRaceLockTime } from '@/utils/predictionRules';
-import { ScreenContainer, SurfaceCard, Skeleton, Flag, Reveal } from '@/components/ui';
+import {
+  ScreenContainer,
+  SurfaceCard,
+  FlagChip,
+  DriverBadge,
+  AppButton,
+  Skeleton,
+  Reveal,
+  EmptyState,
+} from '@/components/ui';
 import { PredictionCard } from '@/components/predict/PredictionCard';
-import { colors, fontFamily, SCREEN_GUTTER } from '@/theme';
-import type { Prediction, Race } from '@/types';
+import { colors, fontFamily, SCREEN_GUTTER, getTeamColor } from '@/theme';
+import type { Driver, Prediction, Race } from '@/types';
 
 type PredictNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,7 +41,13 @@ function formatCountdown(ms: number): string {
 
 const PODIUM_LABELS = ['P1', 'P2', 'P3'] as const;
 
-function code(driverId: string): string {
+interface DriverInfo {
+  code: string;
+  surname: string;
+  teamColor?: string;
+}
+
+function fallbackCode(driverId: string): string {
   return driverId ? driverId.slice(0, 3).toUpperCase() : '--';
 }
 
@@ -43,6 +58,8 @@ const PredictScreen: React.FC = () => {
   const user = useAppSelector(state => state.auth.user);
   const season = useAppSelector(state => state.races.selectedSeason);
   const allRaces = useAppSelector(state => state.races.allRaces);
+  const driversFromState = useAppSelector(state => state.drivers.drivers);
+  const driverStandings = useAppSelector(state => state.standings.driverStandings);
   const { byRound, loading, error } = useAppSelector(state => state.predictions);
 
   const uid = user?.uid;
@@ -74,6 +91,35 @@ const PredictScreen: React.FC = () => {
     };
   }, [uid, season, dispatch]);
 
+  // Resolve a driverId to its display code, surname, and team color (all API data).
+  const driverInfo = useMemo<(driverId: string) => DriverInfo>(() => {
+    const byId = new Map<string, DriverInfo>();
+    driverStandings.forEach(standing => {
+      const d: Driver = standing.driver;
+      const constructor = standing.constructors[0];
+      byId.set(d.driverId, {
+        code: d.code || fallbackCode(d.driverId),
+        surname: d.familyName,
+        teamColor: constructor
+          ? getTeamColor(constructor.constructorId || constructor.name)
+          : undefined,
+      });
+    });
+    driversFromState.forEach(d => {
+      if (!byId.has(d.driverId)) {
+        byId.set(d.driverId, {
+          code: d.code || fallbackCode(d.driverId),
+          surname: d.familyName,
+        });
+      }
+    });
+    return (driverId: string): DriverInfo =>
+      byId.get(driverId) ?? {
+        code: fallbackCode(driverId),
+        surname: fallbackCode(driverId),
+      };
+  }, [driversFromState, driverStandings]);
+
   // Next race = first race whose lock time is still in the future.
   const nextRace = useMemo<Race | undefined>(() => {
     const now = Date.now();
@@ -95,18 +141,17 @@ const PredictScreen: React.FC = () => {
       <ScreenContainer>
         <View style={styles.header}>
           <Text style={styles.title}>Predict</Text>
+          <Text style={styles.subtitle}>Call the podium before lights out.</Text>
         </View>
         <View style={styles.promptContainer}>
           <Text style={styles.promptText}>
             Log in to predict each race podium and climb the leaderboard.
           </Text>
-          <Button
-            mode="contained"
+          <AppButton
+            label="Log In"
+            variant="primary"
             onPress={() => navigation.navigate('Login')}
-            style={styles.promptButton}
-          >
-            Log In
-          </Button>
+          />
         </View>
       </ScreenContainer>
     );
@@ -117,136 +162,153 @@ const PredictScreen: React.FC = () => {
     ? getRaceLockTime(nextRace.date, nextRace.time) <= Date.now()
     : false;
 
+  const goToMakePrediction = () => {
+    if (!nextRace) return;
+    navigation.navigate('MakePrediction', {
+      season,
+      round: nextRace.round,
+      raceId: nextRace.raceId,
+    });
+  };
+
   return (
     <ScreenContainer>
       <View style={styles.header}>
         <Text style={styles.title}>Predict</Text>
-        <Text style={styles.subtitle}>Call the podium before lights out</Text>
+        <Text style={styles.subtitle}>Call the podium before lights out.</Text>
       </View>
 
-        {loading ? (
-          <Skeleton height={140} count={2} />
-        ) : (
-          <>
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
+      {loading ? (
+        <Skeleton height={140} count={2} />
+      ) : (
+        <>
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
-            {/* Next race card */}
-            <Reveal index={0} style={styles.section}>
-              <Text style={styles.sectionLabel}>Next race</Text>
-              {nextRace ? (
-                <SurfaceCard>
-                  <View style={styles.raceTitleRow}>
+          {/* Next race card */}
+          <Reveal index={0}>
+            <Text style={styles.sectionLabel}>Next Race</Text>
+            {nextRace ? (
+              <SurfaceCard accentColor={colors.accent}>
+                <View style={styles.raceTitleRow}>
+                  <View style={styles.raceTitleLeft}>
                     <Text style={styles.raceName}>{nextRace.raceName}</Text>
-                    {nextRace.circuit?.location?.country ? (
-                      <Flag country={nextRace.circuit.location.country} width={26} />
-                    ) : null}
+                    <View style={styles.lockRow}>
+                      <MaterialIcons name="lock" size={15} color={colors.accent} />
+                      <Text style={styles.lockText}>
+                        {nextRaceLocked
+                          ? 'Predictions locked'
+                          : `Locks in ${formatCountdown(
+                              getRaceLockTime(nextRace.date, nextRace.time) -
+                                Date.now()
+                            )}`}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.countdown}>
-                    {nextRaceLocked
-                      ? 'Predictions locked'
-                      : `Locks in ${formatCountdown(
-                          getRaceLockTime(nextRace.date, nextRace.time) - Date.now()
-                        )}`}
-                  </Text>
+                  {nextRace.circuit?.location?.country ? (
+                    <FlagChip
+                      country={nextRace.circuit.location.country}
+                      width={40}
+                    />
+                  ) : null}
+                </View>
 
-                  {nextRacePick ? (
-                    <>
-                      <View style={styles.pickHeaderRow}>
-                        <Text style={styles.pickLabel}>Your pick</Text>
-                        {nextRaceLocked && <Text style={styles.lockIndicator}>🔒</Text>}
-                      </View>
-                      <View style={styles.podiumRow}>
-                        {[nextRacePick.p1, nextRacePick.p2, nextRacePick.p3].map(
-                          (driverId, i) => (
-                            <View key={`pick-${i}`} style={styles.podiumSlot}>
-                              <Text style={styles.slotLabel}>{PODIUM_LABELS[i]}</Text>
-                              <Text style={styles.slotCode}>{code(driverId)}</Text>
+                {nextRacePick ? (
+                  <>
+                    <Text style={styles.pickLabel}>Your pick</Text>
+                    <View style={styles.tileRow}>
+                      {[nextRacePick.p1, nextRacePick.p2, nextRacePick.p3].map(
+                        (driverId, i) => {
+                          const info = driverInfo(driverId);
+                          return (
+                            <View key={`pick-${i}`} style={styles.tile}>
+                              <Text style={styles.tilePos}>{PODIUM_LABELS[i]}</Text>
+                              <View style={styles.tileBadge}>
+                                <DriverBadge
+                                  code={info.code}
+                                  teamColor={info.teamColor}
+                                  size={40}
+                                />
+                              </View>
+                              <Text
+                                style={styles.tileSurname}
+                                numberOfLines={1}
+                              >
+                                {info.surname}
+                              </Text>
                             </View>
-                          )
-                        )}
-                      </View>
-                      {!nextRaceLocked && (
-                        <Button
-                          mode="outlined"
-                          onPress={() =>
-                            navigation.navigate('MakePrediction', {
-                              season,
-                              round: nextRace.round,
-                              raceId: nextRace.raceId,
-                            })
-                          }
-                          style={styles.cta}
-                        >
-                          Edit Prediction
-                        </Button>
+                          );
+                        }
                       )}
-                    </>
-                  ) : nextRaceLocked ? (
-                    <Text style={styles.noPickText}>
-                      Predictions are locked for this race.
-                    </Text>
-                  ) : (
-                    <Button
-                      mode="contained"
-                      onPress={() =>
-                        navigation.navigate('MakePrediction', {
-                          season,
-                          round: nextRace.round,
-                          raceId: nextRace.raceId,
-                        })
-                      }
-                      style={styles.cta}
-                    >
-                      Make Prediction
-                    </Button>
-                  )}
-                </SurfaceCard>
-              ) : (
-                <SurfaceCard>
+                    </View>
+                    {!nextRaceLocked && (
+                      <View style={styles.cardButton}>
+                        <AppButton
+                          label="Edit Prediction"
+                          variant="outline"
+                          onPress={goToMakePrediction}
+                        />
+                      </View>
+                    )}
+                  </>
+                ) : nextRaceLocked ? (
                   <Text style={styles.noPickText}>
-                    No upcoming races open for predictions.
+                    Predictions are locked for this race.
                   </Text>
-                </SurfaceCard>
-              )}
-            </Reveal>
-
-            {/* Leaderboard button */}
-            <Reveal index={1} style={styles.section}>
-              <Button
-                mode="contained-tonal"
-                icon="trophy"
-                onPress={() => navigation.navigate('Leaderboard')}
-              >
-                View Leaderboard
-              </Button>
-            </Reveal>
-
-            {/* Recent predictions */}
-            <Reveal index={2} style={styles.section}>
-              <Text style={styles.sectionLabel}>Recent predictions</Text>
-              {scoredPredictions.length > 0 ? (
-                scoredPredictions.map(prediction => (
-                  <View
-                    key={`${prediction.round}`}
-                    style={styles.predictionCardWrapper}
-                  >
-                    <PredictionCard prediction={prediction} />
+                ) : (
+                  <View style={styles.cardButton}>
+                    <AppButton
+                      label="Make Prediction"
+                      variant="primary"
+                      onPress={goToMakePrediction}
+                    />
                   </View>
-                ))
-              ) : (
-                <SurfaceCard>
-                  <Text style={styles.noPickText}>
-                    No scored predictions yet. Make a pick and check back after the race.
-                  </Text>
-                </SurfaceCard>
-              )}
-            </Reveal>
-          </>
-        )}
+                )}
+              </SurfaceCard>
+            ) : (
+              <SurfaceCard>
+                <Text style={styles.noPickText}>
+                  No upcoming races open for predictions.
+                </Text>
+              </SurfaceCard>
+            )}
+          </Reveal>
+
+          {/* Leaderboard button */}
+          <Reveal index={1} style={styles.leaderboardSection}>
+            <AppButton
+              label="View Leaderboard"
+              variant="secondary"
+              icon="emoji-events"
+              onPress={() => navigation.navigate('Leaderboard')}
+            />
+          </Reveal>
+
+          {/* Recent predictions */}
+          <Reveal index={2}>
+            <Text style={styles.sectionLabel}>Recent Predictions</Text>
+            {scoredPredictions.length > 0 ? (
+              scoredPredictions.map(prediction => (
+                <PredictionCard
+                  key={`${prediction.round}`}
+                  prediction={prediction}
+                />
+              ))
+            ) : (
+              <SurfaceCard>
+                <EmptyState
+                  icon="query-stats"
+                  title="No scored predictions yet"
+                  subtitle="Make a pick and check back after the race."
+                />
+              </SurfaceCard>
+            )}
+          </Reveal>
+        </>
+      )}
     </ScreenContainer>
   );
 };
@@ -254,17 +316,18 @@ const PredictScreen: React.FC = () => {
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SCREEN_GUTTER,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 12,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: 26,
-    fontFamily: fontFamily.heading,
+    fontSize: 34,
+    fontFamily: fontFamily.display,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 14,
+    fontFamily: fontFamily.body,
     marginTop: 4,
   },
   promptContainer: {
@@ -278,9 +341,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  promptButton: {
-    minWidth: 160,
-  },
   errorContainer: {
     marginHorizontal: SCREEN_GUTTER,
     marginBottom: 12,
@@ -289,79 +349,83 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 13,
   },
-  section: {
-    marginBottom: 16,
-  },
   sectionLabel: {
     paddingHorizontal: SCREEN_GUTTER,
-    marginBottom: 8,
-    color: colors.textSecondary,
+    marginBottom: 10,
+    color: colors.textMuted,
     fontFamily: fontFamily.bodySemi,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontSize: 12,
+    letterSpacing: 1.2,
+    fontSize: 11,
+  },
+  leaderboardSection: {
+    marginHorizontal: SCREEN_GUTTER,
+    marginBottom: 16,
   },
   raceTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+  },
+  raceTitleLeft: {
+    flex: 1,
+    marginRight: 12,
   },
   raceName: {
     color: colors.textPrimary,
-    fontSize: 16,
+    fontSize: 19,
     fontFamily: fontFamily.heading,
-    flex: 1,
   },
-  countdown: {
-    color: colors.accent,
-    fontSize: 13,
-    fontFamily: fontFamily.bodySemi,
-    marginTop: 6,
-  },
-  pickHeaderRow: {
+  lockRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 12,
+    marginTop: 6,
+  },
+  lockText: {
+    color: colors.accent,
+    fontSize: 13,
+    fontFamily: fontFamily.bodySemi,
   },
   pickLabel: {
     color: colors.textMuted,
     fontFamily: fontFamily.bodySemi,
     fontSize: 11,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
+    marginTop: 18,
   },
-  lockIndicator: {
-    fontSize: 12,
-  },
-  podiumRow: {
+  tileRow: {
     flexDirection: 'row',
-    gap: 24,
-    marginTop: 8,
+    gap: 8,
+    marginTop: 10,
   },
-  podiumSlot: {
+  tile: {
+    flex: 1,
+    backgroundColor: colors.tile,
+    borderRadius: 14,
+    padding: 14,
     alignItems: 'center',
-    gap: 4,
   },
-  slotLabel: {
-    color: colors.textSecondary,
+  tilePos: {
+    color: colors.accent,
     fontFamily: fontFamily.bodySemi,
     fontSize: 11,
   },
-  slotCode: {
+  tileBadge: {
+    marginVertical: 10,
+  },
+  tileSurname: {
     color: colors.textPrimary,
     fontFamily: fontFamily.heading,
-    fontSize: 15,
+    fontSize: 13,
   },
   noPickText: {
     color: colors.textMuted,
     fontSize: 13,
   },
-  cta: {
-    marginTop: 14,
-  },
-  predictionCardWrapper: {
-    marginBottom: 12,
+  cardButton: {
+    marginTop: 16,
   },
 });
 
