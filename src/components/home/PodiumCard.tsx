@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   footerDivider: {
     height: 1,
     backgroundColor: colors.border,
-    marginTop: 18,
+    marginTop: 0,
   },
   footerRow: {
     flexDirection: 'row',

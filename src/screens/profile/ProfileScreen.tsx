@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, Button, TextInput, Divider } from 'react-native-paper';
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { setUser, clearAuth } from '@/redux/slices/authSlice';
 import { firebaseService } from '@/services/firebaseService';
-import { ScreenContainer, SurfaceCard, DriverBadge } from '@/components/ui';
-import { colors, fontFamily, getTeamColor } from '@/theme';
+import { ScreenContainer, SurfaceCard, AppButton, Reveal } from '@/components/ui';
+import { colors, fontFamily, radii, SCREEN_GUTTER } from '@/theme';
 
 type ProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -50,31 +50,30 @@ const ProfileScreen: React.FC = () => {
   if (!user) {
     return (
       <ScreenContainer scroll>
-        <View style={styles.promptContainer}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Your Profile
-          </Text>
-          <Text variant="bodyMedium" style={styles.promptText}>
-            Log in to view your profile, set your favorite driver and team, and
-            (soon) make race predictions.
-          </Text>
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate('Login')}
-            buttonColor={colors.accent}
-            style={styles.primaryButton}
-          >
-            Log In
-          </Button>
-          <View style={styles.registerRow}>
-            <Text variant="bodyMedium" style={styles.mutedText}>
-              New here?
-            </Text>
-            <Button mode="text" onPress={() => navigation.navigate('Register')}>
-              Sign Up
-            </Button>
-          </View>
+        <View style={styles.header}>
+          <Text style={styles.screenTitle}>Profile</Text>
         </View>
+        <Reveal index={0}>
+          <SurfaceCard>
+            <Text style={styles.cardTitle}>Your Profile</Text>
+            <Text style={styles.bodyText}>
+              Log in to view your profile, set your favorite driver and team, and
+              (soon) make race predictions.
+            </Text>
+            <View style={styles.promptButtons}>
+              <AppButton
+                label="Log In"
+                variant="primary"
+                onPress={() => navigation.navigate('Login')}
+              />
+              <AppButton
+                label="Sign Up"
+                variant="outline"
+                onPress={() => navigation.navigate('Register')}
+              />
+            </View>
+          </SurfaceCard>
+        </Reveal>
       </ScreenContainer>
     );
   }
@@ -121,126 +120,154 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  const teamColor = getTeamColor(user.favoriteConstructorId ?? '');
-
   return (
     <ScreenContainer scroll>
-      <SurfaceCard style={styles.headerCard}>
-        <View style={styles.headerRow}>
-          <DriverBadge code={toInitials(user.displayName)} teamColor={teamColor} size={56} />
-          <View style={styles.headerText}>
-            <Text variant="headlineSmall" style={styles.title}>
+      <View style={styles.header}>
+        <Text style={styles.screenTitle}>Profile</Text>
+      </View>
+
+      {/* Identity card */}
+      <Reveal index={0}>
+        <SurfaceCard style={styles.identityCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{toInitials(user.displayName)}</Text>
+          </View>
+          <View style={styles.identityText}>
+            <Text style={styles.name} numberOfLines={1}>
               {user.displayName || 'Your Profile'}
             </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
+            <Text style={styles.email} numberOfLines={1}>
               {user.email}
             </Text>
-            <Text variant="bodySmall" style={styles.joined}>
-              Joined {formatJoined(user.joinedAt)}
-            </Text>
+            <Text style={styles.joined}>JOINED {formatJoined(user.joinedAt)}</Text>
           </View>
+        </SurfaceCard>
+      </Reveal>
+
+      {/* Bio / Favorites card */}
+      <Reveal index={1}>
+        <SurfaceCard>
+          {editing ? (
+            <>
+              <Text style={styles.inputLabel}>Display Name</Text>
+              <TextInput
+                value={displayName}
+                onChangeText={setDisplayName}
+                placeholder="Your name"
+                placeholderTextColor={colors.textMuted}
+                style={styles.input}
+              />
+              <Text style={styles.inputLabel}>Bio</Text>
+              <TextInput
+                value={bio}
+                onChangeText={setBio}
+                placeholder="Tell us about yourself"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                numberOfLines={4}
+                style={[styles.input, styles.inputMultiline]}
+              />
+              {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+              <View style={styles.editButtons}>
+                <View style={styles.editButton}>
+                  <AppButton
+                    label="Cancel"
+                    variant="outline"
+                    onPress={cancelEditing}
+                    disabled={saving}
+                  />
+                </View>
+                <View style={styles.editButton}>
+                  <AppButton
+                    label="Save"
+                    variant="primary"
+                    onPress={handleSave}
+                    loading={saving}
+                    disabled={saving}
+                  />
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>Bio</Text>
+              <Text style={styles.bodyText}>
+                {user.bio || 'No bio yet. Tap "Edit Profile" to add one.'}
+              </Text>
+
+              <View style={styles.hairline} />
+
+              <Text style={styles.favoritesLabel}>FAVORITES</Text>
+
+              <View style={styles.favoriteRow}>
+                <Text style={styles.favoriteLabel}>Favorite Driver</Text>
+                {user.favoriteDriverId ? (
+                  <Text style={styles.favoriteValue}>{user.favoriteDriverId}</Text>
+                ) : (
+                  <View style={styles.chip}>
+                    <Text style={styles.chipText}>Not set</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.favoriteRow}>
+                <Text style={styles.favoriteLabel}>Favorite Team</Text>
+                {user.favoriteConstructorId ? (
+                  <Text style={styles.favoriteValue}>
+                    {user.favoriteConstructorId}
+                  </Text>
+                ) : (
+                  <View style={styles.chip}>
+                    <Text style={styles.chipText}>Not set</Text>
+                  </View>
+                )}
+              </View>
+
+              {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
+              <View style={styles.editProfileButton}>
+                <AppButton
+                  label="Edit Profile"
+                  variant="outline"
+                  onPress={startEditing}
+                />
+              </View>
+            </>
+          )}
+        </SurfaceCard>
+      </Reveal>
+
+      {/* Settings card */}
+      <Reveal index={2}>
+        <SurfaceCard style={styles.settingsCard}>
+          <Pressable
+            style={styles.settingsRow}
+            onPress={() => navigation.navigate('About')}
+          >
+            <Text style={styles.settingsLabel}>About &amp; Credits</Text>
+            <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
+          </Pressable>
+          <View style={styles.hairline} />
+          <Pressable style={styles.settingsRow} disabled>
+            <Text style={styles.settingsLabel}>Notifications</Text>
+            <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
+          </Pressable>
+        </SurfaceCard>
+      </Reveal>
+
+      {/* Log out */}
+      <Reveal index={3}>
+        <View style={styles.logoutWrap}>
+          <AppButton
+            label="Log Out"
+            variant="secondary"
+            icon="logout"
+            onPress={handleLogout}
+            loading={loggingOut}
+            disabled={loggingOut || editing}
+          />
         </View>
-      </SurfaceCard>
-
-      {editing ? (
-        <SurfaceCard>
-          <TextInput
-            label="Display Name"
-            value={displayName}
-            onChangeText={setDisplayName}
-            mode="outlined"
-            style={styles.input}
-          />
-          <TextInput
-            label="Bio"
-            value={bio}
-            onChangeText={setBio}
-            mode="outlined"
-            multiline
-            numberOfLines={4}
-            style={styles.input}
-          />
-          {errorMessage && (
-            <Text variant="bodySmall" style={styles.errorText}>
-              {errorMessage}
-            </Text>
-          )}
-          <View style={styles.buttonRow}>
-            <Button
-              mode="outlined"
-              onPress={cancelEditing}
-              disabled={saving}
-              style={styles.flexButton}
-            >
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleSave}
-              loading={saving}
-              disabled={saving}
-              buttonColor={colors.accent}
-              style={styles.flexButton}
-            >
-              Save
-            </Button>
-          </View>
-        </SurfaceCard>
-      ) : (
-        <SurfaceCard>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Bio
-          </Text>
-          <Text variant="bodyMedium" style={styles.bodyText}>
-            {user.bio || 'No bio yet. Tap "Edit Profile" to add one.'}
-          </Text>
-
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Favorites
-          </Text>
-          <View style={styles.favoriteRow}>
-            <View style={[styles.teamDot, { backgroundColor: teamColor }]} />
-            <Text variant="bodyMedium" style={styles.bodyText}>
-              Favorite Driver: {user.favoriteDriverId || 'Not set'}
-            </Text>
-          </View>
-          <View style={styles.favoriteRow}>
-            <View style={[styles.teamDot, { backgroundColor: teamColor }]} />
-            <Text variant="bodyMedium" style={styles.bodyText}>
-              Favorite Team: {user.favoriteConstructorId || 'Not set'}
-            </Text>
-          </View>
-
-          {errorMessage && (
-            <Text variant="bodySmall" style={styles.errorText}>
-              {errorMessage}
-            </Text>
-          )}
-
-          <Button mode="outlined" onPress={startEditing} style={styles.editButton}>
-            Edit Profile
-          </Button>
-        </SurfaceCard>
-      )}
-
-      <SurfaceCard>
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('About')}
-          textColor={colors.textSecondary}
-        >
-          About & Credits
-        </Button>
-        <Divider style={styles.divider} />
-        <Button
-          mode="contained-tonal"
-          onPress={handleLogout}
-          loading={loggingOut}
-          disabled={loggingOut || editing}
-        >
-          Log Out
-        </Button>
-      </SurfaceCard>
+      </Reveal>
 
       <View style={styles.footer} />
     </ScreenContainer>
@@ -248,95 +275,180 @@ const ProfileScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  headerCard: {
-    marginTop: 16,
+  header: {
+    paddingHorizontal: SCREEN_GUTTER,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
-  headerRow: {
+  screenTitle: {
+    color: colors.textPrimary,
+    fontSize: 34,
+    lineHeight: 36,
+    letterSpacing: -0.5,
+    fontFamily: fontFamily.display,
+  },
+  // Identity card
+  identityCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 16,
   },
-  headerText: {
-    flex: 1,
-    marginLeft: 14,
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.sm,
+    backgroundColor: colors.tile,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: {
+  avatarText: {
     fontFamily: fontFamily.heading,
+    fontSize: 18,
+    letterSpacing: 0.5,
     color: colors.textPrimary,
   },
-  subtitle: {
+  identityText: {
+    flex: 1,
+  },
+  name: {
+    fontFamily: fontFamily.headingSemi,
+    fontSize: 18,
+    color: colors.textPrimary,
+  },
+  email: {
+    fontFamily: fontFamily.mono,
+    fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
   },
   joined: {
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  divider: {
-    marginVertical: 8,
-    backgroundColor: colors.border,
-  },
-  sectionTitle: {
     fontFamily: fontFamily.bodySemi,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+    marginTop: 6,
+  },
+  // Bio / favorites
+  cardTitle: {
+    fontFamily: fontFamily.headingSemi,
+    fontSize: 16,
     color: colors.textPrimary,
-    marginTop: 12,
-    marginBottom: 4,
   },
   bodyText: {
+    fontFamily: fontFamily.body,
+    fontSize: 14,
+    lineHeight: 20,
     color: colors.textSecondary,
-    marginBottom: 4,
+    marginTop: 6,
+  },
+  hairline: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 16,
+  },
+  favoritesLabel: {
+    fontFamily: fontFamily.bodySemi,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: colors.textMuted,
   },
   favoriteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    marginTop: 12,
   },
-  teamDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
+  favoriteLabel: {
+    fontFamily: fontFamily.body,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  favoriteValue: {
+    fontFamily: fontFamily.bodySemi,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  chip: {
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  chipText: {
+    fontFamily: fontFamily.bodySemi,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  editProfileButton: {
+    marginTop: 20,
+  },
+  // Edit mode
+  inputLabel: {
+    fontFamily: fontFamily.bodySemi,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+    marginBottom: 6,
+    marginTop: 12,
   },
   input: {
-    marginBottom: 12,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fontFamily.body,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
-  buttonRow: {
+  inputMultiline: {
+    minHeight: 96,
+    textAlignVertical: 'top',
+  },
+  editButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
-  flexButton: {
-    flex: 1,
-    marginHorizontal: 4,
+    gap: 12,
+    marginTop: 20,
   },
   editButton: {
-    marginTop: 16,
+    flex: 1,
   },
   errorText: {
+    fontFamily: fontFamily.body,
+    fontSize: 13,
     color: colors.accent,
-    marginBottom: 8,
-  },
-  mutedText: {
-    color: colors.textSecondary,
-  },
-  promptContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    alignItems: 'center',
-  },
-  promptText: {
-    color: colors.textSecondary,
-    textAlign: 'center',
     marginTop: 12,
-    marginBottom: 24,
   },
-  primaryButton: {
-    alignSelf: 'stretch',
+  // Settings
+  settingsCard: {
+    padding: 4,
   },
-  registerRow: {
+  settingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  settingsLabel: {
+    fontFamily: fontFamily.bodyMedium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  // Log out
+  logoutWrap: {
+    marginHorizontal: SCREEN_GUTTER,
+    marginBottom: 12,
+  },
+  promptButtons: {
+    gap: 12,
+    marginTop: 20,
   },
   footer: {
     height: 24,
