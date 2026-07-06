@@ -13,6 +13,7 @@ import RegisterScreen from '@/screens/auth/RegisterScreen';
 import AboutScreen from '@/screens/about/AboutScreen';
 import MakePredictionScreen from '@/screens/predict/MakePredictionScreen';
 import LeaderboardScreen from '@/screens/leaderboard/LeaderboardScreen';
+import RaceDetailsScreen from '@/screens/race-details/RaceDetailsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -102,6 +103,11 @@ export const RootNavigator: React.FC = () => {
             headerShown: false,
             title: 'Leaderboard',
           }}
+        />
+        <Stack.Screen
+          name="RaceDetails"
+          component={RaceDetailsScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

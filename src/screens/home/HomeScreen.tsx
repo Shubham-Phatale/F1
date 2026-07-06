@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { HomeTabParamList } from '@/navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { HomeTabParamList, RootStackParamList } from '@/navigation/types';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { fetchCurrentSeason, fetchRacesByYear } from '@/redux/slices/racesSlice';
 import { fetchStandings } from '@/redux/slices/standingsSlice';
@@ -19,7 +20,13 @@ import { formatPoints } from '@/utils/formatters';
 
 const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  const navigation = useNavigation<BottomTabNavigationProp<HomeTabParamList>>();
+  const navigation =
+    useNavigation<
+      CompositeNavigationProp<
+        BottomTabNavigationProp<HomeTabParamList>,
+        NativeStackNavigationProp<RootStackParamList>
+      >
+    >();
 
   // Get races state
   const racesState = useAppSelector(state => state.races);

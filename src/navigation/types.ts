@@ -7,11 +7,6 @@ export type HomeTabParamList = {
   Standings: undefined;
   Predict: undefined;
   Profile: undefined;
-  RaceDetails: {
-    raceId: string;
-    season: string;
-    round: string;
-  };
 };
 
 // Root Stack Navigator Param List
@@ -26,4 +21,5 @@ export type RootStackParamList = {
   About: undefined;
   MakePrediction: { season: string; round: string; raceId: string };
   Leaderboard: undefined;
+  RaceDetails: { raceId: string; season: string; round: string };
 };
